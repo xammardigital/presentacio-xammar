@@ -1,78 +1,78 @@
-# Presentaciones Interactivas Xammar 🚀
+# Presentacions Interactives Xammar 🚀
 
-Una plataforma de presentaciones en tiempo real construida con **Next.js**, **Convex** y **Tailwind CSS**. Permite a un presentador controlar qué ven los usuarios en sus dispositivos y recibir feedback instantáneo a través de encuestas.
+Una plataforma de presentacions en temps real construïda amb **Next.js**, **Convex** i **Tailwind CSS**. Permet a un presentador controlar què veuen els usuaris en els seus dispositius i rebre feedback instantani a través d'enquestes.
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Tecnologies Utilitzades
 
 - **Frontend:** [Next.js](https://nextjs.org/) (App Router)
-- **Backend Realtime:** [Convex](https://www.convex.dev/) (Base de datos y funciones reactivas)
-- **Estilos:** [Tailwind CSS 4](https://tailwindcss.com/)
-- **Animaciones:** [Framer Motion](https://www.framer.com/motion/)
-- **Iconos:** [Lucide React](https://lucide.dev/)
+- **Backend Realtime:** [Convex](https://www.convex.dev/) (Base de dades i funcions reactives)
+- **Estils:** [Tailwind CSS 4](https://tailwindcss.com/)
+- **Animacions:** [Framer Motion](https://www.framer.com/motion/)
+- **Icones:** [Lucide React](https://lucide.dev/)
 
 ---
 
-## 🚀 Cómo Empezar
+## 🚀 Com Començar
 
-Sigue estos pasos para poner en marcha el proyecto en tu máquina local:
+Segueix aquests passos per posar en marxa el projecte a la teva màquina local:
 
-### 1. Instalar dependencias
+### 1. Instal·lar dependències
 ```bash
 npm install
 ```
 
 ### 2. Configurar el Backend (Convex)
-Ejecuta el servidor de desarrollo de Convex. Si es la primera vez, te pedirá iniciar sesión o crear una cuenta:
+Executa el servidor de desenvolupament de Convex. Si és la primera vegada, et demanarà iniciar la sessió o crear un compte:
 ```bash
 npx convex dev
 ```
-*Esto generará automáticamente tu archivo `.env.local` con las claves necesarias.*
+*Això generarà automàticament el teu fitxer `.env.local` amb les claus necessàries.*
 
 ### 3. Iniciar el servidor de Next.js
-En una **nueva terminal** (manteniendo la de Convex abierta), ejecuta:
+En una **nova terminal** (mantenint la de Convex oberta), executa:
 ```bash
 npm run dev
 ```
-La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
+L'aplicació estarà disponible a [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 📱 ¿Cómo funciona la plataforma?
+## 📱 Com funciona la plataforma?
 
-### 👑 Panel de Administración (`/admin`)
-Es el centro de control para el presentador.
-- **Crear Pasos:** Añade pantallas de tipo `BIENVENIDA`, `TEXTO` o `ENCUESTA`.
-- **Activar:** Al pulsar el botón "ACTIVAR" de un paso, todos los dispositivos conectados cambiarán a ese contenido al instante.
-- **Resultados Live:** Si el paso activo es una encuesta, verás un gráfico de barras que se actualiza en vivo con cada voto.
+### 👑 Panell d'Administració (`/admin`)
+És el centre de control del presentador.
+- **Crear Passos:** Afegeix pantalles de tipus `BIENVENIDA`, `TEXTO` o `ENCUESTA`.
+- **Activar:** En prémer el botó "ACTIVAR" d'un pas, tots els dispositius connectats canviaran a aquest contingut a l'instant.
+- **Resultats Live:** Si el pas actiu és una enquesta, veuràs un gràfic de barres que s'actualitza en viu amb cada vot.
 
-### 👥 Vista del Público (`/`)
-La interfaz que ven los asistentes (ideal para móviles).
-- **Sincronización:** Escucha el estado global y transiciona automáticamente.
-- **Votación:** Permite votar en encuestas. Una vez que el usuario vota, la interfaz se bloquea visualmente para evitar votos duplicados accidentales.
-- **Anonimato:** No se guardan IPs ni datos personales.
+### 👥 Vista del Públic (`/`)
+La interfície que veuen els assistents (ideal per a mòbils).
+- **Sincronització:** Escolta l'estat global i transiciona automàticament.
+- **Votació:** Permet votar en enquestes. Un cop l'usuari vota, la interfície es bloqueja visualment per evitar vots duplicats accidentals.
+- **Anonimat:** No es guarden IPs ni dades personals.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Projecte
 
 ```text
-├── convex/             # Esquema de base de datos y funciones del backend
-│   ├── schema.ts       # Definición de tablas (steps, presentationState)
-│   ├── steps.ts        # Lógica para crear, borrar y votar
-│   └── presentation.ts # Gestión del estado activo de la presentación
+├── convex/             # Esquema de base de dades i funcions del backend
+│   ├── schema.ts       # Definició de taules (steps, presentationState)
+│   ├── steps.ts        # Lògica per crear, esborrar i votar
+│   └── presentation.ts # Gestió de l'estat actiu de la presentació
 ├── src/
-│   ├── app/            # Rutas y páginas de Next.js
-│   │   ├── admin/      # Panel de administración
+│   ├── app/            # Rutes i pàgines de Next.js
+│   │   ├── admin/      # Panell d'administració
 │   │   ├── page.tsx    # Vista pública principal
-│   │   └── layout.tsx  # Layout raíz y temas
-│   └── components/     # Componentes compartidos y proveedores
-└── README.md           # Este archivo
+│   │   └── layout.tsx  # Layout arrel i temes
+│   └── components/     # Components compartits i proveïdors
+└── README.md           # Aquest fitxer
 ```
 
 ---
 
-## 🎨 Diseño y Personalización
+## 🎨 Disseny i Personalització
 
-El proyecto utiliza un sistema de **Modo Oscuro** (Deep Slate/Indigo) con efectos de **Glassmorphism**. Puedes ajustar los colores y estilos globales en `src/app/globals.css`.
+El projecte utilitza un sistema de **Mode Fosc** (Deep Slate/Indigo) amb efectes de **Glassmorphism**. Pots ajustar els colors i estils globals a `src/app/globals.css`.
 
-¡Disfruta de tus presentaciones interactivas! 🎤✨
+Gaudeix de les teves presentacions interactives! 🎤✨
