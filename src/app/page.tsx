@@ -81,7 +81,7 @@ export default function PublicPage() {
 
           {currentStep.type === "ENCUESTA" && currentStep.options && (
             <div className="grid gap-4 w-full">
-              {currentStep.options.map((opt, i) => (
+              {currentStep.options.map((opt: string, i: number) => (
                 <button
                   key={i}
                   disabled={hasVoted}

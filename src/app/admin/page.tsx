@@ -153,7 +153,7 @@ export default function AdminPage() {
             </h2>
             <div className="space-y-4">
               <AnimatePresence mode="popLayout">
-                {steps.map((step) => (
+                {steps.map((step: any) => (
                   <motion.div
                     key={step._id}
                     layout
@@ -222,7 +222,7 @@ export default function AdminPage() {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={activeStep.options.map((opt, i) => ({
+                      data={activeStep.options.map((opt: string, i: number) => ({
                         name: opt,
                         votes: activeStep.votes![i],
                       }))}
@@ -243,7 +243,7 @@ export default function AdminPage() {
                         itemStyle={{ color: "#fff" }}
                       />
                       <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={20}>
-                        {activeStep.options.map((_, index) => (
+                        {activeStep.options.map((_: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Bar>
@@ -251,7 +251,7 @@ export default function AdminPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className="mt-4 flex justify-center gap-6">
-                  {activeStep.options.map((opt, i) => (
+                  {activeStep.options.map((opt: string, i: number) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                       <span className="text-xs text-slate-400">{activeStep.votes![i]} votos</span>
