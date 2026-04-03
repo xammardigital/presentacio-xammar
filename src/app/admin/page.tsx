@@ -120,8 +120,19 @@ export default function AdminPage() {
     if (savedToken) setAdminToken(savedToken);
   }, []);
 
-  const steps = (useQuery(api.steps.list) as any) || [];
+  const stepsFromServer = (useQuery(api.steps.list) as any) || [];
   const presentationState = useQuery(api.presentation.getState) as any;
+
+  // Local optimistic state for ordering
+  const [localSteps, setLocalSteps] = useState<any[]>([]);
+
+  // Sync local state when server data changes (but not while dragging)
+  const [isDragging, setIsDragging] = useState(false);
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalSteps(stepsFromServer);
+    }
+  }, [stepsFromServer, isDragging]);
 
   // Mutations
   const activateMutation = useMutation(api.presentation.activateStep);
@@ -137,12 +148,23 @@ export default function AdminPage() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setIsDragging(false);
     if (!over || active.id === over.id) return;
-    const oldIndex = steps.findIndex((s: any) => s._id === active.id);
-    const newIndex = steps.findIndex((s: any) => s._id === over.id);
-    const newOrder = arrayMove(steps, oldIndex, newIndex);
-    await reorderMutation({ orderedIds: newOrder.map((s: any) => s._id) });
+    const oldIndex = localSteps.findIndex((s: any) => s._id === active.id);
+    const newIndex = localSteps.findIndex((s: any) => s._id === over.id);
+    const newOrder = arrayMove(localSteps, oldIndex, newIndex);
+    // Optimistic update — apply immediately before Convex responds
+    setLocalSteps(newOrder);
+    try {
+      await reorderMutation({ orderedIds: newOrder.map((s: any) => s._id) });
+    } catch (err) {
+      // Rollback on failure
+      setLocalSteps(stepsFromServer);
+      alert("Error al reordenar. Inténtalo de nuevo.");
+    }
   };
+
+  const handleDragStart = () => setIsDragging(true);
 
   // State for the form
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
@@ -150,7 +172,7 @@ export default function AdminPage() {
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
-  const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
+  const activeStep = localSteps.find((s: any) => s._id === presentationState?.currentStepId);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,13 +412,13 @@ export default function AdminPage() {
           <section className="space-y-6">
             <h2 className="flex items-center justify-between text-xl font-semibold">
               <span>Lista de Pasos</span>
-              <span className="text-xs font-normal text-slate-500">{steps.length} pasos · arrastra para reordenar</span>
+              <span className="text-xs font-normal text-slate-500">{localSteps.length} pasos · arrastra para reordenar</span>
             </h2>
             <div className="space-y-3">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={steps.map((s: any) => s._id)} strategy={verticalListSortingStrategy}>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                <SortableContext items={localSteps.map((s: any) => s._id)} strategy={verticalListSortingStrategy}>
                   <AnimatePresence>
-                    {steps.map((step: any) => (
+                    {localSteps.map((step: any) => (
                       <motion.div
                         key={step._id}
                         initial={{ opacity: 0, y: -8 }}
