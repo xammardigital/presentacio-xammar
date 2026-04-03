@@ -21,7 +21,10 @@ export const reorder = mutation({
   args: { orderedIds: v.array(v.id("steps")) },
   handler: async (ctx, args) => {
     for (let i = 0; i < args.orderedIds.length; i++) {
-      await ctx.db.patch(args.orderedIds[i], { order: i });
+      const doc = await ctx.db.get(args.orderedIds[i]);
+      if (doc) {
+        await ctx.db.patch(args.orderedIds[i], { order: i });
+      }
     }
   },
 });
@@ -34,15 +37,15 @@ export const create = mutation({
     options: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const lastStep = await ctx.db.query("steps").order("desc").first();
-    const order = lastStep ? lastStep.order + 1 : 0;
+    const allSteps = await ctx.db.query("steps").collect();
+    const maxOrder = allSteps.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
     const stepId = await ctx.db.insert("steps", {
       type: args.type,
       title: args.title,
       content: args.content,
       options: args.options,
       votes: args.options ? new Array(args.options.length).fill(0) : undefined,
-      order,
+      order: maxOrder + 1,
     });
     return stepId;
   },
