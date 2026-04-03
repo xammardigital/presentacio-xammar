@@ -134,14 +134,20 @@ export default function AdminPage() {
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Token de administración"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              className={`w-full rounded-xl border bg-slate-950 p-4 text-white outline-none focus:ring-2 focus:ring-indigo-500 ${error ? "border-red-500" : "border-slate-700"}`}
               required
             />
+            {error && (
+              <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400 text-left">
+                ⚠️ {error}
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white transition-all hover:bg-indigo-500"
+              disabled={isValidating}
+              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white transition-all hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Desbloquear Panel
+              {isValidating ? "Verificando..." : "Desbloquear Panel"}
             </button>
           </form>
         </motion.div>
