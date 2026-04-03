@@ -39,13 +39,31 @@ export default function AdminPage() {
 
   const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenInput.trim()) return;
-    // Store token locally — server-side mutations validate it on every action
-    setAdminToken(tokenInput);
-    sessionStorage.setItem("adminToken", tokenInput);
+    setIsValidating(true);
     setError(null);
+
+    try {
+      const res = await fetch("/api/validate-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: tokenInput }),
+      });
+      const data = await res.json();
+
+      if (data.valid) {
+        setAdminToken(tokenInput);
+        sessionStorage.setItem("adminToken", tokenInput);
+      } else {
+        setError(data.error || "Token incorrecto. Inténtalo de nuevo.");
+      }
+    } catch (err) {
+      setError("Error de red. Comprueba tu conexión.");
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleLogout = () => {
