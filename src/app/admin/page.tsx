@@ -13,6 +13,8 @@ export default function AdminPage() {
   const [adminToken, setAdminToken] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -24,36 +26,51 @@ export default function AdminPage() {
   const presentationState = useQuery(api.presentation.getState) as any;
   const currentStep = useQuery(api.steps.get, { id: presentationState?.currentStepId ?? null }) as any;
   
-  const createStep = useMutation(api.steps.create);
-  const removeStep = useMutation(api.steps.remove);
-  const activateStep = useMutation(api.presentation.activateStep);
-
+  // Mutations
+  const activateMutation = useMutation(api.presentation.activateStep);
+  const createStepMutation = useMutation(api.steps.create);
+  const removeStepMutation = useMutation(api.steps.remove);
+  
+  // State for the form
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
+  // Query to check if the current token is valid
+  const isTokenValid = useQuery(api.presentation.validateToken, { token: adminToken ?? "" });
+
+  // Clear token if invalid
+  useEffect(() => {
+    if (adminToken && isTokenValid === false) {
+      handleLogout();
+      alert("Tu sesión ha expirado o el token es inválido.");
+    }
+  }, [isTokenValid, adminToken]);
+
   const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tokenInput.trim()) {
-      sessionStorage.setItem("adminToken", tokenInput);
-      setAdminToken(tokenInput);
-    }
+    setIsValidating(true);
+    setError(null);
+    setAdminToken(tokenInput);
+    sessionStorage.setItem("adminToken", tokenInput);
+    setIsValidating(false);
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem("adminToken");
     setAdminToken(null);
     setTokenInput("");
+    setError(null);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminToken) return;
     try {
-      await createStep({
+      await createStepMutation({
         type,
         title,
         content: type === "TEXTO" ? content : undefined,
@@ -72,7 +89,7 @@ export default function AdminPage() {
   const handleRemove = async (id: any) => {
     if (!adminToken) return;
     try {
-      await removeStep({ id, adminToken });
+      await removeStepMutation({ id, adminToken });
     } catch (err) {
       alert("Error: No se pudo eliminar el paso.");
     }
@@ -81,7 +98,7 @@ export default function AdminPage() {
   const handleActivate = async (id: any) => {
     if (!adminToken) return;
     try {
-      await activateStep({ id, adminToken });
+      await activateMutation({ id, adminToken });
     } catch (err) {
       alert("Error: No se pudo activar el paso.");
     }
