@@ -4,7 +4,8 @@ import { mutation, query } from "./_generated/server";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("steps").order("asc").collect();
+    const steps = await ctx.db.query("steps").collect();
+    return steps.sort((a, b) => a.order - b.order);
   },
 });
 
