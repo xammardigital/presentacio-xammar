@@ -15,6 +15,14 @@ export const validateToken = query({
   },
 });
 
+// Added for more robust frontend validation
+export const checkToken = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    return args.token === process.env.ADMIN_TOKEN;
+  },
+});
+
 export const activateStep = mutation({
   args: { id: v.union(v.id("steps"), v.null()), adminToken: v.string() },
   handler: async (ctx, args) => {

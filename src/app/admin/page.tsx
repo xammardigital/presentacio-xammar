@@ -30,6 +30,7 @@ export default function AdminPage() {
   const activateMutation = useMutation(api.presentation.activateStep);
   const createStepMutation = useMutation(api.steps.create);
   const removeStepMutation = useMutation(api.steps.remove);
+  const checkTokenMutation = useMutation(api.presentation.checkToken);
   
   // State for the form
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
@@ -37,29 +38,28 @@ export default function AdminPage() {
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
-  // Query to check if the current token is valid (skip if no token to avoid unnecessary errors)
-  const isTokenValid = useQuery(
-    api.presentation.validateToken, 
-    adminToken ? { token: adminToken } : "skip"
-  );
-
-  // Clear token if invalid
-  useEffect(() => {
-    if (adminToken && isTokenValid === false) {
-      handleLogout();
-      alert("Tu sesión ha expirado o el token es inválido.");
-    }
-  }, [isTokenValid, adminToken]);
-
   const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsValidating(true);
     setError(null);
-    setAdminToken(tokenInput);
-    sessionStorage.setItem("adminToken", tokenInput);
-    setIsValidating(false);
+    
+    try {
+      // Manual validation with try-catch to prevent crashes
+      const isValid = await checkTokenMutation({ token: tokenInput });
+      if (isValid) {
+        setAdminToken(tokenInput);
+        sessionStorage.setItem("adminToken", tokenInput);
+      } else {
+        setError("Token incorrecto. Inténtalo de nuevo.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Error de conexión: Asegúrate de haber ejecutado 'npx pnpm convex deploy' en tu terminal.");
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleLogout = () => {
