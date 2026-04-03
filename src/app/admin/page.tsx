@@ -37,8 +37,11 @@ export default function AdminPage() {
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
-  // Query to check if the current token is valid
-  const isTokenValid = useQuery(api.presentation.validateToken, { token: adminToken ?? "" });
+  // Query to check if the current token is valid (skip if no token to avoid unnecessary errors)
+  const isTokenValid = useQuery(
+    api.presentation.validateToken, 
+    adminToken ? { token: adminToken } : "skip"
+  );
 
   // Clear token if invalid
   useEffect(() => {
