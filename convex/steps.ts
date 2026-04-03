@@ -22,15 +22,10 @@ export const create = mutation({
     title: v.string(),
     content: v.optional(v.string()),
     options: v.optional(v.array(v.string())),
-    adminToken: v.string(),
   },
   handler: async (ctx, args) => {
-    if (args.adminToken !== process.env.ADMIN_TOKEN) {
-      throw new Error("Unauthorized: Invalid admin token");
-    }
     const lastStep = await ctx.db.query("steps").order("desc").first();
     const order = lastStep ? lastStep.order + 1 : 0;
-    
     const stepId = await ctx.db.insert("steps", {
       type: args.type,
       title: args.title,
@@ -44,11 +39,8 @@ export const create = mutation({
 });
 
 export const remove = mutation({
-  args: { id: v.id("steps"), adminToken: v.string() },
+  args: { id: v.id("steps") },
   handler: async (ctx, args) => {
-    if (args.adminToken !== process.env.ADMIN_TOKEN) {
-      throw new Error("Unauthorized: Invalid admin token");
-    }
     await ctx.db.delete(args.id);
   },
 });

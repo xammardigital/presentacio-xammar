@@ -75,37 +75,32 @@ export default function AdminPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminToken) return;
     try {
       await createStepMutation({
         type,
         title,
         content: type === "TEXTO" ? content : undefined,
         options: type === "ENCUESTA" ? options.filter(o => o.trim() !== "") : undefined,
-        adminToken,
       });
       setTitle("");
       setContent("");
       setOptions(["", ""]);
     } catch (err) {
-      alert("Error: Token inválido o sesión expirada.");
-      handleLogout();
+      alert("Error al crear el paso. Inténtalo de nuevo.");
     }
   };
 
   const handleRemove = async (id: any) => {
-    if (!adminToken) return;
     try {
-      await removeStepMutation({ id, adminToken });
+      await removeStepMutation({ id });
     } catch (err) {
       alert("Error: No se pudo eliminar el paso.");
     }
   };
 
   const handleActivate = async (id: any) => {
-    if (!adminToken) return;
     try {
-      await activateMutation({ id, adminToken });
+      await activateMutation({ id });
     } catch (err) {
       alert("Error: No se pudo activar el paso.");
     }
