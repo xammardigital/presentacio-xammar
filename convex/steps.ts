@@ -16,6 +16,15 @@ export const get = query({
   },
 });
 
+export const reorder = mutation({
+  args: { orderedIds: v.array(v.id("steps")) },
+  handler: async (ctx, args) => {
+    for (let i = 0; i < args.orderedIds.length; i++) {
+      await ctx.db.patch(args.orderedIds[i], { order: i });
+    }
+  },
+});
+
 export const create = mutation({
   args: {
     type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),

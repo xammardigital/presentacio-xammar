@@ -3,12 +3,110 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut } from "lucide-react";
+import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut, GripVertical } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const COLORS = ["#6366f1", "#a855f7", "#ec4899", "#f97316"];
 
+// --- Sortable Step Card ---
+function SortableStep({
+  step,
+  isActive,
+  onActivate,
+  onRemove,
+}: {
+  step: any;
+  isActive: boolean;
+  onActivate: (id: any) => void;
+  onRemove: (id: any) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : "auto",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative flex items-center justify-between rounded-2xl border p-5 transition-colors ${
+        isActive ? "border-indigo-500 bg-indigo-500/10" : "border-slate-800 bg-slate-900/20"
+      }`}
+    >
+      {/* Drag Handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="mr-3 cursor-grab touch-none text-slate-600 hover:text-slate-400 active:cursor-grabbing"
+        aria-label="Arrastrar para reordenar"
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
+
+      <div className="flex flex-1 items-center gap-4">
+        <div
+          className={`rounded-lg p-2 ${
+            step.type === "BIENVENIDA"
+              ? "bg-amber-500/20 text-amber-500"
+              : step.type === "TEXTO"
+              ? "bg-sky-500/20 text-sky-500"
+              : "bg-emerald-500/20 text-emerald-500"
+          }`}
+        >
+          {step.type === "BIENVENIDA" && <Smile className="h-5 w-5" />}
+          {step.type === "TEXTO" && <Type className="h-5 w-5" />}
+          {step.type === "ENCUESTA" && <BarChart3 className="h-5 w-5" />}
+        </div>
+        <div>
+          <h3 className="font-semibold text-white">{step.title}</h3>
+          <p className="text-xs uppercase tracking-wider text-slate-500">{step.type}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onActivate(step._id)}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+            isActive ? "bg-indigo-500 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          <Play className="h-4 w-4 fill-current" />
+          {isActive ? "ACTIVO" : "ACTIVAR"}
+        </button>
+        <button
+          onClick={() => onRemove(step._id)}
+          className="rounded-lg bg-slate-800 p-2 text-slate-500 transition-all hover:bg-red-500/20 hover:text-red-500"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- Main Admin Page ---
 export default function AdminPage() {
   const [adminToken, setAdminToken] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState("");
@@ -24,13 +122,28 @@ export default function AdminPage() {
 
   const steps = (useQuery(api.steps.list) as any) || [];
   const presentationState = useQuery(api.presentation.getState) as any;
-  const currentStep = useQuery(api.steps.get, { id: presentationState?.currentStepId ?? null }) as any;
-  
+
   // Mutations
   const activateMutation = useMutation(api.presentation.activateStep);
   const createStepMutation = useMutation(api.steps.create);
   const removeStepMutation = useMutation(api.steps.remove);
-  
+  const reorderMutation = useMutation(api.steps.reorder);
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = steps.findIndex((s: any) => s._id === active.id);
+    const newIndex = steps.findIndex((s: any) => s._id === over.id);
+    const newOrder = arrayMove(steps, oldIndex, newIndex);
+    await reorderMutation({ orderedIds: newOrder.map((s: any) => s._id) });
+  };
+
   // State for the form
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
   const [title, setTitle] = useState("");
@@ -80,7 +193,7 @@ export default function AdminPage() {
         type,
         title,
         content: type === "TEXTO" ? content : undefined,
-        options: type === "ENCUESTA" ? options.filter(o => o.trim() !== "") : undefined,
+        options: type === "ENCUESTA" ? options.filter((o) => o.trim() !== "") : undefined,
       });
       setTitle("");
       setContent("");
@@ -115,7 +228,7 @@ export default function AdminPage() {
   if (!adminToken) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md space-y-8 rounded-3xl border border-slate-800 bg-slate-900/50 p-10 text-center glass"
@@ -133,18 +246,18 @@ export default function AdminPage() {
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Token de administración"
-              className={`w-full rounded-xl border bg-slate-950 p-4 text-white outline-none focus:ring-2 focus:ring-indigo-500 ${error ? "border-red-500" : "border-slate-700"}`}
+              className={`w-full rounded-xl border bg-slate-950 p-4 text-white outline-none focus:ring-2 focus:ring-indigo-500 ${
+                error ? "border-red-500" : "border-slate-700"
+              }`}
               required
             />
             {error && (
-              <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400 text-left">
-                ⚠️ {error}
-              </p>
+              <p className="rounded-lg bg-red-500/10 p-3 text-left text-sm text-red-400">⚠️ {error}</p>
             )}
             <button
               type="submit"
               disabled={isValidating}
-              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white transition-all hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white transition-all hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isValidating ? "Verificando..." : "Desbloquear Panel"}
             </button>
@@ -163,11 +276,17 @@ export default function AdminPage() {
             <p className="text-slate-400">Gestiona los pasos de tu presentación interactiva.</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-full bg-slate-900/50 px-4 py-2 border border-slate-800">
-              <div className={`h-2 w-2 rounded-full ${presentationState?.currentStepId ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
-              <span className="text-sm font-medium">{presentationState?.currentStepId ? 'Presentación Activa' : 'En espera'}</span>
+            <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/50 px-4 py-2">
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  presentationState?.currentStepId ? "animate-pulse bg-green-500" : "bg-slate-500"
+                }`}
+              />
+              <span className="text-sm font-medium">
+                {presentationState?.currentStepId ? "Presentación Activa" : "En espera"}
+              </span>
             </div>
-            <button 
+            <button
               onClick={handleLogout}
               className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 transition-all hover:bg-red-500/20"
             >
@@ -249,7 +368,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={addOption}
-                      className="text-sm text-indigo-400 hover:text-indigo-300 font-medium"
+                      className="text-sm font-medium text-indigo-400 hover:text-indigo-300"
                     >
                       + Añadir otra opción
                     </button>
@@ -271,60 +390,30 @@ export default function AdminPage() {
           <section className="space-y-6">
             <h2 className="flex items-center justify-between text-xl font-semibold">
               <span>Lista de Pasos</span>
-              <span className="text-xs font-normal text-slate-500">{steps.length} pasos totales</span>
+              <span className="text-xs font-normal text-slate-500">{steps.length} pasos · arrastra para reordenar</span>
             </h2>
-            <div className="space-y-4">
-              <AnimatePresence mode="popLayout">
-                {steps.map((step: any) => (
-                  <motion.div
-                    key={step._id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className={`group relative flex items-center justify-between rounded-2xl border p-5 transition-all ${
-                      presentationState?.currentStepId === step._id
-                        ? "border-indigo-500 bg-indigo-500/10"
-                        : "border-slate-800 bg-slate-900/20"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`rounded-lg p-2 ${
-                        step.type === 'BIENVENIDA' ? 'bg-amber-500/20 text-amber-500' :
-                        step.type === 'TEXTO' ? 'bg-sky-500/20 text-sky-500' :
-                        'bg-emerald-500/20 text-emerald-500'
-                      }`}>
-                        {step.type === 'BIENVENIDA' && <Smile className="h-5 w-5" />}
-                        {step.type === 'TEXTO' && <Type className="h-5 w-5" />}
-                        {step.type === 'ENCUESTA' && <BarChart3 className="h-5 w-5" />}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">{step.title}</h3>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider">{step.type}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleActivate(step._id)}
-                        className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${
-                          presentationState?.currentStepId === step._id
-                            ? "bg-indigo-500 text-white"
-                            : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                        }`}
+            <div className="space-y-3">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={steps.map((s: any) => s._id)} strategy={verticalListSortingStrategy}>
+                  <AnimatePresence>
+                    {steps.map((step: any) => (
+                      <motion.div
+                        key={step._id}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                       >
-                        <Play className="h-4 w-4 fill-current" />
-                        {presentationState?.currentStepId === step._id ? "ACTIVO" : "ACTIVAR"}
-                      </button>
-                      <button
-                        onClick={() => handleRemove(step._id)}
-                        className="rounded-lg bg-slate-800 p-2 text-slate-500 transition-all hover:bg-red-500/20 hover:text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                        <SortableStep
+                          step={step}
+                          isActive={presentationState?.currentStepId === step._id}
+                          onActivate={handleActivate}
+                          onRemove={handleRemove}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </SortableContext>
+              </DndContext>
             </div>
 
             {/* Live Results Panel */}
@@ -332,14 +421,14 @@ export default function AdminPage() {
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-8 feedback-card glass"
+                className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-8 glass"
               >
                 <h2 className="mb-6 flex items-center justify-between text-xl font-semibold">
                   <span className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-indigo-400" />
                     Resultados en Vivo
                   </span>
-                  <span className="text-sm font-medium text-indigo-400 animate-pulse">LIVE</span>
+                  <span className="animate-pulse text-sm font-medium text-indigo-400">LIVE</span>
                 </h2>
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -361,7 +450,7 @@ export default function AdminPage() {
                         width={100}
                       />
                       <Tooltip
-                        contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: '8px' }}
+                        contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px" }}
                         itemStyle={{ color: "#fff" }}
                       />
                       <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={20}>
