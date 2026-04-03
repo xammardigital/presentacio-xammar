@@ -30,7 +30,6 @@ export default function AdminPage() {
   const activateMutation = useMutation(api.presentation.activateStep);
   const createStepMutation = useMutation(api.steps.create);
   const removeStepMutation = useMutation(api.steps.remove);
-  const checkTokenMutation = useMutation(api.presentation.checkToken);
   
   // State for the form
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
@@ -40,26 +39,13 @@ export default function AdminPage() {
 
   const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsValidating(true);
+    if (!tokenInput.trim()) return;
+    // Store token locally — server-side mutations validate it on every action
+    setAdminToken(tokenInput);
+    sessionStorage.setItem("adminToken", tokenInput);
     setError(null);
-    
-    try {
-      // Manual validation with try-catch to prevent crashes
-      const isValid = await checkTokenMutation({ token: tokenInput });
-      if (isValid) {
-        setAdminToken(tokenInput);
-        sessionStorage.setItem("adminToken", tokenInput);
-      } else {
-        setError("Token incorrecto. Inténtalo de nuevo.");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Error de conexión: Asegúrate de haber ejecutado 'npx pnpm convex deploy' en tu terminal.");
-    } finally {
-      setIsValidating(false);
-    }
   };
 
   const handleLogout = () => {
