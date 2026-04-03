@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:3000 ws://localhost:3000 https://*.convex.cloud wss://*.convex.cloud; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:3000 ws://localhost:3000 https://*.convex.cloud wss://*.convex.cloud https://*.eu-west-1.convex.cloud wss://*.eu-west-1.convex.cloud https://*.convex.site; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
           {
             key: "X-Frame-Options",
