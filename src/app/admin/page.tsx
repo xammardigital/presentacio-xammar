@@ -157,10 +157,10 @@ export default function AdminPage() {
     setLocalSteps(newOrder);
     try {
       await reorderMutation({ orderedIds: newOrder.map((s: any) => s._id) });
-    } catch (err) {
+    } catch (err: any) {
       // Rollback on failure
       setLocalSteps(stepsFromServer);
-      alert("Error al reordenar. Inténtalo de nuevo.");
+      alert("Error al reordenar: " + (err?.message || String(err)));
     }
   };
 
