@@ -1,18 +1,27 @@
-"use client";
-
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useState } from "react";
-import { Plus, Trash2, Play, BarChart3, Type, Smile } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 
 const COLORS = ["#6366f1", "#a855f7", "#ec4899", "#f97316"];
 
 export default function AdminPage() {
+  const [adminToken, setAdminToken] = useState<string | null>(null);
+  const [tokenInput, setTokenInput] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const savedToken = sessionStorage.getItem("adminToken");
+    if (savedToken) setAdminToken(savedToken);
+  }, []);
+
   const steps = (useQuery(api.steps.list) as any) || [];
   const presentationState = useQuery(api.presentation.getState) as any;
   const currentStep = useQuery(api.steps.get, { id: presentationState?.currentStepId ?? null }) as any;
+  
   const createStep = useMutation(api.steps.create);
   const removeStep = useMutation(api.steps.remove);
   const activateStep = useMutation(api.presentation.activateStep);
@@ -24,22 +33,99 @@ export default function AdminPage() {
 
   const activeStep = steps.find((s: any) => s._id === presentationState?.currentStepId);
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tokenInput.trim()) {
+      sessionStorage.setItem("adminToken", tokenInput);
+      setAdminToken(tokenInput);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("adminToken");
+    setAdminToken(null);
+    setTokenInput("");
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createStep({
-      type,
-      title,
-      content: type === "TEXTO" ? content : undefined,
-      options: type === "ENCUESTA" ? options.filter(o => o.trim() !== "") : undefined,
-    });
-    setTitle("");
-    setContent("");
-    setOptions(["", ""]);
+    if (!adminToken) return;
+    try {
+      await createStep({
+        type,
+        title,
+        content: type === "TEXTO" ? content : undefined,
+        options: type === "ENCUESTA" ? options.filter(o => o.trim() !== "") : undefined,
+        adminToken,
+      });
+      setTitle("");
+      setContent("");
+      setOptions(["", ""]);
+    } catch (err) {
+      alert("Error: Token inválido o sesión expirada.");
+      handleLogout();
+    }
+  };
+
+  const handleRemove = async (id: any) => {
+    if (!adminToken) return;
+    try {
+      await removeStep({ id, adminToken });
+    } catch (err) {
+      alert("Error: No se pudo eliminar el paso.");
+    }
+  };
+
+  const handleActivate = async (id: any) => {
+    if (!adminToken) return;
+    try {
+      await activateStep({ id, adminToken });
+    } catch (err) {
+      alert("Error: No se pudo activar el paso.");
+    }
   };
 
   const addOption = () => {
     if (options.length < 4) setOptions([...options, ""]);
   };
+
+  if (!isMounted) return null;
+
+  if (!adminToken) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md space-y-8 rounded-3xl border border-slate-800 bg-slate-900/50 p-10 text-center glass"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-500">
+            <Lock className="h-10 w-10" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-white">Acceso Restringido</h1>
+            <p className="text-slate-400">Introduce el token de administrador para gestionar la presentación.</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              placeholder="Token de administración"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white transition-all hover:bg-indigo-500"
+            >
+              Desbloquear Panel
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-100 lg:p-12">
@@ -49,9 +135,18 @@ export default function AdminPage() {
             <h1 className="text-4xl font-bold tracking-tight text-white">Panel de Control</h1>
             <p className="text-slate-400">Gestiona los pasos de tu presentación interactiva.</p>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-slate-900/50 px-4 py-2 border border-slate-800">
-            <div className={`h-2 w-2 rounded-full ${presentationState?.currentStepId ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
-            <span className="text-sm font-medium">{presentationState?.currentStepId ? 'Presentación Activa' : 'En espera'}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 rounded-full bg-slate-900/50 px-4 py-2 border border-slate-800">
+              <div className={`h-2 w-2 rounded-full ${presentationState?.currentStepId ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
+              <span className="text-sm font-medium">{presentationState?.currentStepId ? 'Presentación Activa' : 'En espera'}</span>
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-full bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 transition-all hover:bg-red-500/20"
+            >
+              <LogOut className="h-4 w-4" />
+              Salir
+            </button>
           </div>
         </header>
 
@@ -183,7 +278,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => activateStep({ id: step._id })}
+                        onClick={() => handleActivate(step._id)}
                         className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${
                           presentationState?.currentStepId === step._id
                             ? "bg-indigo-500 text-white"
@@ -194,7 +289,7 @@ export default function AdminPage() {
                         {presentationState?.currentStepId === step._id ? "ACTIVO" : "ACTIVAR"}
                       </button>
                       <button
-                        onClick={() => removeStep({ id: step._id })}
+                        onClick={() => handleRemove(step._id)}
                         className="rounded-lg bg-slate-800 p-2 text-slate-500 transition-all hover:bg-red-500/20 hover:text-red-500"
                       >
                         <Trash2 className="h-4 w-4" />
