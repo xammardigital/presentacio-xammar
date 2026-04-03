@@ -160,7 +160,7 @@ export default function AdminPage() {
     } catch (err: any) {
       // Rollback on failure
       setLocalSteps(stepsFromServer);
-      alert("Error al reordenar: " + (err?.message || String(err)));
+      alert("Error al reordenar. Inténtalo de nuevo.");
     }
   };
 
