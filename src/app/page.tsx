@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ChevronRight, BarChart3, Star, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function PublicPage() {
   const presentationState = useQuery(api.presentation.getState) as any;
@@ -36,16 +37,19 @@ export default function PublicPage() {
           animate={{ opacity: 1 }}
           className="space-y-6"
         >
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-          <h2 className="text-2xl font-bold text-white uppercase tracking-widest">Esperando al presentador...</h2>
-          <p className="text-slate-500">La presentación comenzará en breve.</p>
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <h2 className="text-2xl font-bold text-foreground uppercase tracking-widest">Esperant al presentador...</h2>
+          <p className="text-muted-foreground">La presentació començarà en breu.</p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-slate-950 p-6 py-8 text-slate-100 overflow-y-auto scroll-smooth">
+    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-background p-6 py-8 text-foreground overflow-y-auto scroll-smooth">
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep._id}
@@ -59,7 +63,7 @@ export default function PublicPage() {
           <div className="flex justify-center">
             <div className={`rounded-full p-4 ${
               currentStep.type === 'BIENVENIDA' ? 'bg-amber-500/10 text-amber-500' :
-              currentStep.type === 'TEXTO' ? 'bg-indigo-500/10 text-indigo-500' :
+              currentStep.type === 'TEXTO' ? 'bg-primary/10 text-primary' :
               'bg-emerald-500/10 text-emerald-500'
             }`}>
               {currentStep.type === 'BIENVENIDA' && <SmileIcon className="h-8 w-8" />}
@@ -69,11 +73,11 @@ export default function PublicPage() {
           </div>
 
           <div className="text-center space-y-2">
-            <h1 className={`${currentStep.type === 'ENCUESTA' ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-bold text-white tracking-tight leading-tight`}>
+            <h1 className={`${currentStep.type === 'ENCUESTA' ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-bold text-secondary-foreground tracking-tight leading-tight`}>
               {currentStep.title}
             </h1>
             {currentStep.content && (
-              <p className="text-base text-slate-400 sm:text-xl font-medium leading-relaxed">
+              <p className="text-base text-muted-foreground sm:text-xl font-medium leading-relaxed">
                 {currentStep.content}
               </p>
             )}
@@ -88,10 +92,10 @@ export default function PublicPage() {
                   onClick={() => handleVote(i)}
                   className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border-2 p-4 text-left transition-all sm:p-5 ${
                     selectedOption === i
-                      ? "border-indigo-500 bg-indigo-500/20 text-white"
+                      ? "border-primary bg-primary/20 text-foreground"
                       : hasVoted
-                      ? "border-slate-800 bg-slate-900/40 text-slate-500 opacity-60"
-                      : "border-slate-800 bg-slate-900/60 text-slate-200 hover:border-slate-600 hover:bg-slate-900 active:scale-95"
+                      ? "border-border bg-card/40 text-muted-foreground opacity-60"
+                      : "border-border bg-card/60 text-foreground hover:border-accent hover:bg-card active:scale-95"
                   }`}
                 >
                   <span className="text-lg font-bold sm:text-xl">{opt}</span>
@@ -107,9 +111,9 @@ export default function PublicPage() {
                 <motion.p
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 text-center text-indigo-400 font-bold tracking-wide uppercase text-sm"
+                  className="mt-4 text-center text-primary font-bold tracking-wide uppercase text-sm"
                 >
-                  ¡Voto registrado! Espera al siguiente paso.
+                  ¡Vot registrat! Espera al següent pas.
                 </motion.p>
               )}
             </div>
@@ -121,9 +125,9 @@ export default function PublicPage() {
               transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
               className="flex justify-center"
             >
-              <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/50 px-6 py-3 text-sm font-bold text-slate-400">
+              <div className="flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-bold text-muted-foreground">
                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                Interactúa en tiempo real
+                Interactua en temps real
               </div>
             </motion.div>
           )}

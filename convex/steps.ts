@@ -25,10 +25,10 @@ export const reorder = mutation({
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
     if (!serverToken) {
-      throw new Error("ERROR: ADMIN_TOKEN no configurado en el Dashboard de Convex.");
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
-      throw new Error("ERROR: Token de administrador incorrecto.");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
     for (let i = 0; i < args.orderedIds.length; i++) {
       const doc = await ctx.db.get(args.orderedIds[i]);
@@ -50,10 +50,10 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
     if (!serverToken) {
-      throw new Error("ERROR: ADMIN_TOKEN no configurado en el Dashboard de Convex.");
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
-      throw new Error("ERROR: Token de administrador incorrecto.");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
     const allSteps = await ctx.db.query("steps").collect();
     const maxOrder = allSteps.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
@@ -77,10 +77,10 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
     if (!serverToken) {
-      throw new Error("ERROR: ADMIN_TOKEN no configurado en el Dashboard de Convex.");
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
-      throw new Error("ERROR: Token de administrador incorrecto.");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
     await ctx.db.delete(args.id);
   },
