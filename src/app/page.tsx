@@ -45,7 +45,7 @@ export default function PublicPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-slate-950 p-6 py-12 text-slate-100 overflow-y-auto scroll-smooth">
+    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-slate-950 p-6 py-8 text-slate-100 overflow-y-auto scroll-smooth">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep._id}
@@ -53,7 +53,7 @@ export default function PublicPage() {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -20, scale: 0.98 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="w-full max-w-lg space-y-8"
+          className={`w-full max-w-lg ${currentStep.type === 'ENCUESTA' ? 'space-y-4' : 'space-y-8'}`}
         >
           {/* Header Icon */}
           <div className="flex justify-center">
@@ -68,8 +68,8 @@ export default function PublicPage() {
             </div>
           </div>
 
-          <div className="text-center space-y-3">
-            <h1 className="text-3xl font-bold text-white sm:text-4xl tracking-tight leading-tight">
+          <div className="text-center space-y-2">
+            <h1 className={`${currentStep.type === 'ENCUESTA' ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-bold text-white tracking-tight leading-tight`}>
               {currentStep.title}
             </h1>
             {currentStep.content && (
@@ -80,13 +80,13 @@ export default function PublicPage() {
           </div>
 
           {currentStep.type === "ENCUESTA" && currentStep.options && (
-            <div className="grid gap-4 w-full">
+            <div className="grid gap-3 w-full">
               {currentStep.options.map((opt: string, i: number) => (
                 <button
                   key={i}
                   disabled={hasVoted}
                   onClick={() => handleVote(i)}
-                  className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border-2 p-5 text-left transition-all sm:p-6 ${
+                  className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border-2 p-4 text-left transition-all sm:p-5 ${
                     selectedOption === i
                       ? "border-indigo-500 bg-indigo-500/20 text-white"
                       : hasVoted
@@ -129,10 +129,6 @@ export default function PublicPage() {
           )}
         </motion.div>
       </AnimatePresence>
-
-      <footer className="fixed bottom-8 text-xs font-mono uppercase tracking-[0.2em] text-slate-700">
-        Interactive Platform — Realtime
-      </footer>
     </main>
   );
 }
