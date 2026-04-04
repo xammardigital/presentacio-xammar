@@ -163,7 +163,7 @@ export default function AdminPage() {
     } catch (err: any) {
       // Rollback on failure
       setLocalSteps(stepsFromServer);
-      alert("Error al reordenar. Inténtalo de nuevo.");
+      alert("Error al reordenar: " + (err.data || err.message || "Error desconocido"));
     }
   };
 
@@ -224,8 +224,8 @@ export default function AdminPage() {
       setTitle("");
       setContent("");
       setOptions(["", ""]);
-    } catch (err) {
-      alert("Error al crear el paso. Inténtalo de nuevo.");
+    } catch (err: any) {
+      alert("Error al crear el paso: " + (err.data || err.message || "Error desconocido"));
     }
   };
 
@@ -235,8 +235,8 @@ export default function AdminPage() {
         id,
         adminToken: adminToken || "",
       });
-    } catch (err) {
-      alert("Error: No se pudo eliminar el paso.");
+    } catch (err: any) {
+      alert("Error al eliminar el paso: " + (err.data || err.message || "Error desconocido"));
     }
   };
 
@@ -246,8 +246,8 @@ export default function AdminPage() {
         id,
         adminToken: adminToken || "",
       });
-    } catch (err) {
-      alert("Error: No se pudo activar el paso.");
+    } catch (err: any) {
+      alert("Error al activar el paso: " + (err.data || err.message || "Error desconocido"));
     }
   };
 

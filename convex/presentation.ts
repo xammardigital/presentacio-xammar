@@ -29,8 +29,12 @@ export const activateStep = mutation({
     adminToken: v.string(),
   },
   handler: async (ctx, args) => {
-    if (args.adminToken !== process.env.ADMIN_TOKEN) {
-      throw new Error("Unauthorized");
+    const serverToken = process.env.ADMIN_TOKEN;
+    if (!serverToken) {
+      throw new Error("ERROR: ADMIN_TOKEN no configurado en el Dashboard de Convex.");
+    }
+    if (args.adminToken !== serverToken) {
+      throw new Error("ERROR: Token de administrador incorrecto.");
     }
     const existing = await ctx.db.query("presentationState").first();
     if (existing) {
