@@ -156,7 +156,10 @@ export default function AdminPage() {
     // Optimistic update — apply immediately before Convex responds
     setLocalSteps(newOrder);
     try {
-      await reorderMutation({ orderedIds: newOrder.map((s: any) => s._id) });
+      await reorderMutation({ 
+        orderedIds: newOrder.map((s: any) => s._id),
+        adminToken: adminToken || "",
+      });
     } catch (err: any) {
       // Rollback on failure
       setLocalSteps(stepsFromServer);
@@ -216,6 +219,7 @@ export default function AdminPage() {
         title,
         content: type === "TEXTO" ? content : undefined,
         options: type === "ENCUESTA" ? options.filter((o) => o.trim() !== "") : undefined,
+        adminToken: adminToken || "",
       });
       setTitle("");
       setContent("");
@@ -227,7 +231,10 @@ export default function AdminPage() {
 
   const handleRemove = async (id: any) => {
     try {
-      await removeStepMutation({ id });
+      await removeStepMutation({ 
+        id,
+        adminToken: adminToken || "",
+      });
     } catch (err) {
       alert("Error: No se pudo eliminar el paso.");
     }
@@ -235,7 +242,10 @@ export default function AdminPage() {
 
   const handleActivate = async (id: any) => {
     try {
-      await activateMutation({ id });
+      await activateMutation({ 
+        id,
+        adminToken: adminToken || "",
+      });
     } catch (err) {
       alert("Error: No se pudo activar el paso.");
     }

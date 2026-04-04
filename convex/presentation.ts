@@ -24,8 +24,14 @@ export const checkToken = mutation({
 });
 
 export const activateStep = mutation({
-  args: { id: v.union(v.id("steps"), v.null()) },
+  args: { 
+    id: v.union(v.id("steps"), v.null()),
+    adminToken: v.string(),
+  },
   handler: async (ctx, args) => {
+    if (args.adminToken !== process.env.ADMIN_TOKEN) {
+      throw new Error("Unauthorized");
+    }
     const existing = await ctx.db.query("presentationState").first();
     if (existing) {
       await ctx.db.patch(existing._id, { currentStepId: args.id });

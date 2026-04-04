@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:3000 ws://localhost:3000 https://*.convex.cloud wss://*.convex.cloud https://*.eu-west-1.convex.cloud wss://*.eu-west-1.convex.cloud https://*.convex.site; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:3000 ws://localhost:3000 https://tame-minnow-902.convex.cloud wss://tame-minnow-902.convex.cloud https://tame-minnow-902.convex.site https://dashing-pony-387.eu-west-1.convex.cloud wss://dashing-pony-387.eu-west-1.convex.cloud https://dashing-pony-387.eu-west-1.convex.site; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
           {
             key: "X-Frame-Options",

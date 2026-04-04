@@ -18,8 +18,14 @@ export const get = query({
 });
 
 export const reorder = mutation({
-  args: { orderedIds: v.array(v.id("steps")) },
+  args: { 
+    orderedIds: v.array(v.id("steps")),
+    adminToken: v.string(),
+  },
   handler: async (ctx, args) => {
+    if (args.adminToken !== process.env.ADMIN_TOKEN) {
+      throw new Error("Unauthorized");
+    }
     for (let i = 0; i < args.orderedIds.length; i++) {
       const doc = await ctx.db.get(args.orderedIds[i]);
       if (doc) {
@@ -35,8 +41,12 @@ export const create = mutation({
     title: v.string(),
     content: v.optional(v.string()),
     options: v.optional(v.array(v.string())),
+    adminToken: v.string(),
   },
   handler: async (ctx, args) => {
+    if (args.adminToken !== process.env.ADMIN_TOKEN) {
+      throw new Error("Unauthorized");
+    }
     const allSteps = await ctx.db.query("steps").collect();
     const maxOrder = allSteps.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
     const stepId = await ctx.db.insert("steps", {
@@ -52,8 +62,14 @@ export const create = mutation({
 });
 
 export const remove = mutation({
-  args: { id: v.id("steps") },
+  args: { 
+    id: v.id("steps"),
+    adminToken: v.string(),
+  },
   handler: async (ctx, args) => {
+    if (args.adminToken !== process.env.ADMIN_TOKEN) {
+      throw new Error("Unauthorized");
+    }
     await ctx.db.delete(args.id);
   },
 });
