@@ -365,6 +365,7 @@ export default function AdminPage() {
                   className="w-full rounded-xl border border-border bg-background p-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
+                <p className="text-xs text-muted-foreground">Suporta: <code className="bg-secondary px-1 rounded">**negrita**</code> · <code className="bg-secondary px-1 rounded">[link](url)</code> · emojis 🎉</p>
               </div>
 
               {type === "TEXTO" && (
@@ -373,9 +374,10 @@ export default function AdminPage() {
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Escriu el missatge aquí..."
-                    className="h-32 w-full rounded-xl border border-border bg-background p-3 text-foreground outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={`Escriu el missatge aquí...\n\nEx: **Benvinguts** a la sessió! 🚀\nVisita [Xammar Digital](https://xammar.digital)`}
+                    className="h-40 w-full rounded-xl border border-border bg-background p-3 text-foreground outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
                   />
+                  <p className="text-xs text-muted-foreground">Suporta: <code className="bg-secondary px-1 rounded">**negrita**</code> · <code className="bg-secondary px-1 rounded">[link](url)</code> · emojis 🎉 · salts de línia</p>
                 </div>
               )}
 

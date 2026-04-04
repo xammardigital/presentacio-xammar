@@ -28,7 +28,13 @@ npx convex dev
 ```
 *Això generarà automàticament el teu fitxer `.env.local` amb les claus necessàries.*
 
-### 3. Iniciar el servidor de Next.js
+### 3. Configurar Seguretat (Admin Token)
+Aquesta plataforma utilitza un token de seguretat per a les accions d'administrador. 
+1. Crea un fitxer `.env.local` (si no s'ha creat) a partir de `.env.example`.
+2. Defineix una clau secreta a `ADMIN_TOKEN`.
+3. **Molt important:** Afegeix aquesta mateixa clau al teu **Convex Dashboard** (Settings > Environment Variables) amb el nom `ADMIN_TOKEN`.
+
+### 4. Iniciar el servidor de Next.js
 En una **nova terminal** (mantenint la de Convex oberta), executa:
 ```bash
 npm run dev
@@ -73,6 +79,18 @@ La interfície que veuen els assistents (ideal per a mòbils).
 
 ## 🎨 Disseny i Personalització
 
-El projecte utilitza un sistema de **Mode Fosc** (Deep Slate/Indigo) amb efectes de **Glassmorphism**. Pots ajustar els colors i estils globals a `src/app/globals.css`.
+El projecte utilitza el sistema de disseny oficial de **Xammar Digital**. Pots personalitzar-lo fàcilment:
+- **Colors i Tipografia:** Modifica `src/app/globals.css`. 
+- **Textos de Marca:** Canvia el títol de la web a `src/app/layout.tsx`.
 
-Gaudeix de les teves presentacions interactives! 🎤✨
+## 🔒 Seguretat i Privadesa
+
+El projecte està configurat seguint una arquitectura **Zero-Trust**:
+- Les claus privades de Convex i el `ADMIN_TOKEN` **mai es publiquen a GitHub** (estat protegit per `.gitignore`).
+- Totes les mutacions sensibles al backend verifiquen el token abans d'executar-se.
+
+---
+
+## 📄 Llicència
+
+Aquest projecte està sota la llicència **MIT**. Ets lliure d'utilitzar-lo, modificar-lo i distribuir-lo per a qualsevol propòsit. ✨

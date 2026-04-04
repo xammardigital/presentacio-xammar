@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ChevronRight, BarChart3, Star, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RichText } from "@/components/RichText";
 
 export default function PublicPage() {
   const presentationState = useQuery(api.presentation.getState) as any;
@@ -74,11 +75,11 @@ export default function PublicPage() {
 
           <div className="text-center space-y-2">
             <h1 className={`${currentStep.type === 'ENCUESTA' ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-bold text-secondary-foreground tracking-tight leading-tight`}>
-              {currentStep.title}
+              <RichText text={currentStep.title} />
             </h1>
             {currentStep.content && (
               <p className="text-base text-muted-foreground sm:text-xl font-medium leading-relaxed">
-                {currentStep.content}
+                <RichText text={currentStep.content} />
               </p>
             )}
           </div>
@@ -98,7 +99,7 @@ export default function PublicPage() {
                       : "border-border bg-card/60 text-foreground hover:border-accent hover:bg-card active:scale-95"
                   }`}
                 >
-                  <span className="text-lg font-bold sm:text-xl">{opt}</span>
+                  <span className="text-lg font-bold sm:text-xl"><RichText text={opt} /></span>
                   {selectedOption === i ? (
                     <CheckCircle2 className="h-5 w-5 text-indigo-400 shrink-0" />
                   ) : (
