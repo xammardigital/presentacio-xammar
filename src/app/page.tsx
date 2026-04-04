@@ -45,7 +45,7 @@ export default function PublicPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-slate-100 overflow-hidden">
+    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-slate-950 p-6 py-12 text-slate-100 overflow-y-auto scroll-smooth">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep._id}
@@ -53,27 +53,27 @@ export default function PublicPage() {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -20, scale: 0.98 }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="w-full max-w-lg space-y-12"
+          className="w-full max-w-lg space-y-8"
         >
           {/* Header Icon */}
           <div className="flex justify-center">
-            <div className={`rounded-full p-6 ${
+            <div className={`rounded-full p-4 ${
               currentStep.type === 'BIENVENIDA' ? 'bg-amber-500/10 text-amber-500' :
               currentStep.type === 'TEXTO' ? 'bg-indigo-500/10 text-indigo-500' :
               'bg-emerald-500/10 text-emerald-500'
             }`}>
-              {currentStep.type === 'BIENVENIDA' && <SmileIcon className="h-12 w-12" />}
-              {currentStep.type === 'TEXTO' && <Zap className="h-12 w-12" />}
-              {currentStep.type === 'ENCUESTA' && <BarChart3 className="h-12 w-12" />}
+              {currentStep.type === 'BIENVENIDA' && <SmileIcon className="h-8 w-8" />}
+              {currentStep.type === 'TEXTO' && <Zap className="h-8 w-8" />}
+              {currentStep.type === 'ENCUESTA' && <BarChart3 className="h-8 w-8" />}
             </div>
           </div>
 
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-black text-white sm:text-6xl tracking-tight leading-tight">
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl font-bold text-white sm:text-4xl tracking-tight leading-tight">
               {currentStep.title}
             </h1>
             {currentStep.content && (
-              <p className="text-lg text-slate-400 sm:text-2xl font-medium leading-relaxed">
+              <p className="text-base text-slate-400 sm:text-xl font-medium leading-relaxed">
                 {currentStep.content}
               </p>
             )}
@@ -86,7 +86,7 @@ export default function PublicPage() {
                   key={i}
                   disabled={hasVoted}
                   onClick={() => handleVote(i)}
-                  className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border-2 p-6 text-left transition-all sm:p-8 ${
+                  className={`relative flex w-full items-center justify-between overflow-hidden rounded-2xl border-2 p-5 text-left transition-all sm:p-6 ${
                     selectedOption === i
                       ? "border-indigo-500 bg-indigo-500/20 text-white"
                       : hasVoted
@@ -94,11 +94,11 @@ export default function PublicPage() {
                       : "border-slate-800 bg-slate-900/60 text-slate-200 hover:border-slate-600 hover:bg-slate-900 active:scale-95"
                   }`}
                 >
-                  <span className="text-xl font-bold sm:text-2xl">{opt}</span>
+                  <span className="text-lg font-bold sm:text-xl">{opt}</span>
                   {selectedOption === i ? (
-                    <CheckCircle2 className="h-6 w-6 text-indigo-400 shrink-0" />
+                    <CheckCircle2 className="h-5 w-5 text-indigo-400 shrink-0" />
                   ) : (
-                    <ChevronRight className={`h-6 w-6 shrink-0 ${hasVoted ? 'hidden' : 'text-slate-600'}`} />
+                    <ChevronRight className={`h-5 w-5 shrink-0 ${hasVoted ? 'hidden' : 'text-slate-600'}`} />
                   )}
                 </button>
               ))}
