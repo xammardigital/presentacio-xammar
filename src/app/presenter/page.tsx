@@ -132,7 +132,7 @@ export default function PresenterPage() {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 800;
-          font-size: 2.5em;
+          font-size: 2em;
           margin-bottom: 0.4em;
           line-height: 1.1;
         }
@@ -140,7 +140,7 @@ export default function PresenterPage() {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 700;
-          font-size: 1.8em;
+          font-size: 1.9em;
           margin-bottom: 0.4em;
           line-height: 1.15;
         }
@@ -148,7 +148,7 @@ export default function PresenterPage() {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 600;
-          font-size: 1.3em;
+          font-size: 1.8em;
           margin-bottom: 0.3em;
           line-height: 1.2;
         }
@@ -156,7 +156,21 @@ export default function PresenterPage() {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 600;
-          font-size: 1.1em;
+          font-size: 1.6em;
+          margin-bottom: 0.3em;
+        }
+        .presenter-markdown h5 {
+          font-family: var(--font-funnel-display);
+          color: #FF6B00;
+          font-weight: 600;
+          font-size: 1.6em;
+          margin-bottom: 0.3em;
+        }
+        .presenter-markdown h6 {
+          font-family: var(--font-funnel-display);
+          color: #FF6B00;
+          font-weight: 600;
+          font-size: 1.5em;
           margin-bottom: 0.3em;
         }
         .presenter-markdown p {
