@@ -89,8 +89,8 @@ export default function PresenterPage() {
           className="flex h-full w-full flex-col items-center justify-center p-24 text-center"
         >
           <div 
-            style={{ fontSize: `${slide.fontScale * 1.5}rem` }} 
-            className="w-full max-w-5xl presenter-markdown"
+            style={{ fontSize: `${slide.fontScale}clamp(1.2rem, 1.6vw, 2rem)` }} 
+            className="w-full max-w-5xl max-h-[80vh] overflow-y-auto presenter-markdown"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {slide.markdownContent}
@@ -132,17 +132,35 @@ export default function PresenterPage() {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 800;
-          margin-bottom: 0.5em;
+          font-size: 2.5em;
+          margin-bottom: 0.4em;
           line-height: 1.1;
         }
         .presenter-markdown h2 {
           font-family: var(--font-funnel-display);
           color: #FF6B00;
           font-weight: 700;
+          font-size: 1.8em;
           margin-bottom: 0.4em;
+          line-height: 1.15;
+        }
+        .presenter-markdown h3 {
+          font-family: var(--font-funnel-display);
+          color: #FF6B00;
+          font-weight: 600;
+          font-size: 1.3em;
+          margin-bottom: 0.3em;
+          line-height: 1.2;
+        }
+        .presenter-markdown h4 {
+          font-family: var(--font-funnel-display);
+          color: #FF6B00;
+          font-weight: 600;
+          font-size: 1.1em;
+          margin-bottom: 0.3em;
         }
         .presenter-markdown p {
-          margin-bottom: 1em;
+          margin-bottom: 0.8em;
           color: rgba(255, 255, 255, 0.9);
         }
         .presenter-markdown strong {
@@ -152,15 +170,15 @@ export default function PresenterPage() {
         .presenter-markdown ul, .presenter-markdown ol {
           display: inline-block;
           text-align: left;
-          margin: 1em 0;
+          margin: 0.8em 0;
         }
         .presenter-markdown li {
-          margin-bottom: 0.5em;
+          margin-bottom: 0.4em;
           position: relative;
           padding-left: 1.5em;
         }
         .presenter-markdown li::before {
-          content: "•";
+          content: "\u2022";
           color: #FF6B00;
           position: absolute;
           left: 0;
@@ -168,11 +186,22 @@ export default function PresenterPage() {
         }
         .presenter-markdown img {
           max-width: 90%;
-          max-height: 60vh;
-          margin: 2em auto;
+          max-height: 50vh;
+          margin: 1.5em auto;
+          display: block;
           border-radius: 1rem;
           box-shadow: 0 20px 50px rgba(0,0,0,0.3);
           object-fit: contain;
+        }
+        .presenter-markdown::-webkit-scrollbar {
+          width: 6px;
+        }
+        .presenter-markdown::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .presenter-markdown::-webkit-scrollbar-thumb {
+          background: rgba(255, 107, 0, 0.3);
+          border-radius: 3px;
         }
       `}</style>
     </div>
