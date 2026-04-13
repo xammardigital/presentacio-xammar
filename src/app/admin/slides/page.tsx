@@ -15,15 +15,92 @@ import {
   ChevronRight
 } from "lucide-react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ADMIN_TOKEN_KEY = "adminToken";
+
+function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slide._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : "auto",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center justify-between rounded-2xl border p-4 transition-all ${
+        isActive 
+          ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
+          : "border-border bg-card/50 hover:bg-card"
+      }`}
+    >
+      <div className="flex items-center gap-4 flex-1">
+        <div {...attributes} {...listeners} className="cursor-grab hover:text-foreground text-muted-foreground touch-none">
+          <GripVertical className="h-5 w-5" />
+        </div>
+        <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-secondary/50 border border-border overflow-hidden text-[6px] p-2 leading-tight text-muted-foreground select-none">
+            {slide.markdownContent.substring(0, 80)}...
+        </div>
+        <div className="flex-1">
+          <h3 className="font-medium line-clamp-1">
+            {slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Escala: {slide.fontScale}x • {slide.linkedStepId ? "Vinculada" : "Sin interactividad"}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onActivate(slide._id)}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all font-display ${
+            isActive
+              ? "bg-primary text-white"
+              : "bg-secondary text-foreground hover:bg-secondary/80"
+          }`}
+        >
+          <Play className="h-4 w-4 fill-current" />
+          {isActive ? "ACTIVA" : "ACTIVAR"}
+        </button>
+        <Link
+          href={`/admin/slides/${slide._id}`}
+          className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-foreground transition-all"
+        >
+          <Edit3 className="h-5 w-5" />
+        </Link>
+        <button
+          onClick={() => onRemove(slide._id)}
+          className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-destructive transition-all"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function SlidesAdminPage() {
   const [adminToken, setAdminToken] = useState<string | null>(null);
@@ -44,23 +121,36 @@ export default function SlidesAdminPage() {
   const setActiveSlide = useMutation(api.slides.setActive);
 
   const [localSlides, setLocalSlides] = useState<any[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    setLocalSlides(slides);
-  }, [slides]);
+    if (!isDragging) {
+      setLocalSlides(slides);
+    }
+  }, [slides, isDragging]);
 
-  const onDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-    const items = Array.from(localSlides);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const handleDragStart = () => setIsDragging(true);
 
-    setLocalSlides(items);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setIsDragging(false);
+    
+    if (!over || active.id === over.id) return;
+    
+    const oldIndex = localSlides.findIndex((s: any) => s._id === active.id);
+    const newIndex = localSlides.findIndex((s: any) => s._id === over.id);
+    const newOrder = arrayMove(localSlides, oldIndex, newIndex);
+    
+    setLocalSlides(newOrder);
 
     try {
       await reorderSlides({
-        orderedIds: items.map((s) => s._id),
+        orderedIds: newOrder.map((s: any) => s._id),
         adminToken: adminToken || "",
       });
     } catch (error) {
@@ -108,7 +198,7 @@ export default function SlidesAdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-12">
+    <div className="min-h-screen bg-background p-6 lg:p-12 text-foreground">
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -116,7 +206,7 @@ export default function SlidesAdminPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold font-display">Editor de Diapositivas</h1>
+              <h1 className="text-3xl font-bold font-display text-secondary-foreground">Editor de Diapositivas</h1>
               <p className="text-muted-foreground">Gestiona el contenido de la pantalla grande.</p>
             </div>
           </div>
@@ -163,73 +253,29 @@ export default function SlidesAdminPage() {
         </header>
 
         <section className="space-y-4">
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="slides">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                  {localSlides.map((slide, index) => (
-                    <Draggable key={slide._id} draggableId={slide._id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`group flex items-center justify-between rounded-2xl border p-4 transition-all ${
-                            presentationState?.activeSlideId === slide._id 
-                              ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
-                              : "border-border bg-card/50 hover:bg-card"
-                          }`}
-                        >
-                          <div className="flex items-center gap-4 flex-1">
-                            <div {...provided.dragHandleProps} className="text-muted-foreground hover:text-foreground">
-                              <GripVertical className="h-5 w-5" />
-                            </div>
-                            <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-secondary/50 border border-border overflow-hidden text-[6px] p-2 leading-tight text-muted-foreground select-none">
-                               {slide.markdownContent.substring(0, 80)}...
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium line-clamp-1">
-                                {slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
-                              </h3>
-                              <p className="text-xs text-muted-foreground">
-                                Escala: {slide.fontScale}x • {slide.linkedStepId ? "Vinculada" : "Sin interactividad"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleActivate(slide._id)}
-                              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all font-display ${
-                                presentationState?.activeSlideId === slide._id
-                                  ? "bg-primary text-white"
-                                  : "bg-secondary text-foreground hover:bg-secondary/80"
-                              }`}
-                            >
-                              <Play className="h-4 w-4 fill-current" />
-                              {presentationState?.activeSlideId === slide._id ? "ACTIVA" : "ACTIVAR"}
-                            </button>
-                            <Link
-                              href={`/admin/slides/${slide._id}`}
-                              className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-foreground transition-all"
-                            >
-                              <Edit3 className="h-5 w-5" />
-                            </Link>
-                            <button
-                              onClick={() => handleRemove(slide._id)}
-                              className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-destructive transition-all"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <SortableContext items={localSlides.map((s: any) => s._id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {localSlides.map((slide: any) => (
+                    <motion.div
+                      key={slide._id}
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                    >
+                      <SortableSlideItem
+                        slide={slide}
+                        isActive={presentationState?.activeSlideId === slide._id}
+                        onActivate={handleActivate}
+                        onRemove={handleRemove}
+                      />
+                    </motion.div>
                   ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                </AnimatePresence>
+              </div>
+            </SortableContext>
+          </DndContext>
           
           {localSlides.length === 0 && (
             <div className="text-center py-20 rounded-3xl border-2 border-dashed border-border bg-card/20">
