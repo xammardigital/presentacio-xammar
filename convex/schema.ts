@@ -4,7 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   presentationState: defineTable({
     currentStepId: v.union(v.id("steps"), v.null()),
-    activeSlideId: v.union(v.id("slides"), v.null()),
+    activeSlideId: v.optional(v.union(v.id("slides"), v.null())),
   }),
   steps: defineTable({
     type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),
