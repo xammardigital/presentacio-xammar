@@ -172,7 +172,7 @@ export default function PresenterPage() {
           width: fit-content;
           margin: 0.8em auto;
           text-align: left;
-          list-style: none;
+          list-style-type: disc;
           padding-left: 1.5em;
         }
         .presenter-markdown ol {
@@ -180,26 +180,16 @@ export default function PresenterPage() {
           width: fit-content;
           margin: 0.8em auto;
           text-align: left;
-          list-style: decimal;
+          list-style-type: decimal;
           padding-left: 1.5em;
         }
         .presenter-markdown li {
           margin-bottom: 0.4em;
-          padding-left: 0.5em;
+          padding-left: 0.25em;
         }
-        .presenter-markdown ul > li::before {
-          content: "\u2022";
+        .presenter-markdown li::marker {
           color: #FF6B00;
           font-weight: bold;
-          position: absolute;
-          margin-left: -1em;
-        }
-        .presenter-markdown ol li::marker {
-          color: #FF6B00;
-          font-weight: bold;
-        }
-        .presenter-markdown ul > li {
-          position: relative;
         }
         .presenter-markdown img {
           max-width: 90%;
