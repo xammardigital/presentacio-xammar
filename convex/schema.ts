@@ -16,6 +16,7 @@ export default defineSchema({
   }),
   slides: defineTable({
     order: v.number(),
+    internalTitle: v.optional(v.string()),
     markdownContent: v.string(),
     fontScale: v.union(v.literal(0.8), v.literal(1.0), v.literal(1.2), v.literal(1.5), v.literal(2.0)),
     linkedStepId: v.union(v.id("steps"), v.null()),

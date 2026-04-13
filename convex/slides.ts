@@ -19,6 +19,7 @@ export const getById = query({
 
 export const create = mutation({
   args: {
+    internalTitle: v.optional(v.string()),
     markdownContent: v.string(),
     fontScale: v.union(v.literal(0.8), v.literal(1.0), v.literal(1.2), v.literal(1.5), v.literal(2.0)),
     linkedStepId: v.union(v.id("steps"), v.null()),
@@ -35,6 +36,7 @@ export const create = mutation({
     const maxOrder = allSlides.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
 
     return await ctx.db.insert("slides", {
+      internalTitle: args.internalTitle,
       markdownContent: args.markdownContent,
       fontScale: args.fontScale,
       linkedStepId: args.linkedStepId,
@@ -47,6 +49,7 @@ export const create = mutation({
 export const update = mutation({
   args: {
     id: v.id("slides"),
+    internalTitle: v.optional(v.string()),
     markdownContent: v.string(),
     fontScale: v.union(v.literal(0.8), v.literal(1.0), v.literal(1.2), v.literal(1.5), v.literal(2.0)),
     linkedStepId: v.union(v.id("steps"), v.null()),
@@ -60,6 +63,7 @@ export const update = mutation({
     }
 
     await ctx.db.patch(args.id, {
+      internalTitle: args.internalTitle,
       markdownContent: args.markdownContent,
       fontScale: args.fontScale,
       linkedStepId: args.linkedStepId,

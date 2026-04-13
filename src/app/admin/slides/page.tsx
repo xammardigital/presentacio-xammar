@@ -65,7 +65,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
         </div>
         <div className="flex-1">
           <h3 className="font-medium line-clamp-1">
-            {slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
+            {slide.internalTitle || slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
           </h3>
           <p className="text-xs text-muted-foreground">
             Escala: {slide.fontScale}x • {slide.linkedStepId ? "Vinculada" : "Sin interactividad"}
@@ -162,6 +162,7 @@ export default function SlidesAdminPage() {
   const handleCreate = async () => {
     try {
       await createSlide({
+        internalTitle: "Nova Diapositiva",
         markdownContent: "# Nova Diapositiva\nEscribe aquí tu contenido...",
         fontScale: 1.0,
         linkedStepId: null,

@@ -33,6 +33,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [markdown, setMarkdown] = useState<string>("");
+  const [internalTitle, setInternalTitle] = useState<string>("Nova Diapositiva");
   const [fontScale, setFontScale] = useState<number>(1.0);
   const [linkedStepId, setLinkedStepId] = useState<string | null>(null);
   const [autoActivate, setAutoActivate] = useState<boolean>(false);
@@ -55,6 +56,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (slide) {
       setMarkdown(slide.markdownContent);
+      setInternalTitle(slide.internalTitle || "");
       setFontScale(slide.fontScale as number);
       setLinkedStepId(slide.linkedStepId as string | null);
       setAutoActivate(slide.autoActivate);
@@ -67,6 +69,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
     try {
       await updateSlide({
         id,
+        internalTitle,
         markdownContent: markdown,
         fontScale: fontScale as any,
         linkedStepId: linkedStepId as any,
@@ -130,12 +133,15 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
           <Link href="/admin/slides" className="rounded-full hover:bg-secondary p-2 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground w-full max-w-sm">
             <Link href="/admin/slides" className="hover:text-foreground">Slides</Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="font-medium text-foreground truncate max-w-[200px]">
-              {markdown.split('\n')[0].replace('#', '').trim() || "Nova Diapositiva"}
-            </span>
+            <input 
+              value={internalTitle}
+              onChange={(e) => setInternalTitle(e.target.value)}
+              className="bg-transparent font-medium text-foreground outline-none border-b border-transparent focus:border-primary/50 px-1 py-0.5 w-full flex-1"
+              placeholder="Títol de la diapositiva"
+            />
           </div>
         </div>
         
@@ -153,15 +159,14 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
 
       <main className="flex flex-1 overflow-hidden">
         {/* Left: Editor */}
-        <div className="flex flex-[3] flex-col border-r border-border overflow-hidden">
-          <div className="flex-1 overflow-auto bg-[#0d1117]">
+        <div className="flex flex-[3] flex-col border-r border-border overflow-hidden" data-color-mode="dark">
+          <div className="flex-1 overflow-auto bg-[#0d1117] text-slate-200">
              <MDEditor
               value={markdown}
               onChange={(val) => setMarkdown(val || "")}
               height="100%"
               preview="edit"
               extraCommands={[]}
-              className="!bg-transparent"
             />
           </div>
           
