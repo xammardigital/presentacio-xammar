@@ -32,15 +32,22 @@ export default function PublicPage() {
 
   if (!presentationState || !currentStep) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-12 text-center text-foreground">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-8"
         >
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <h2 className="text-2xl font-bold text-foreground uppercase tracking-widest">Esperant al presentador...</h2>
-          <p className="text-muted-foreground">La presentació començarà en breu.</p>
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-secondary text-primary">
+            <Zap className="h-12 w-12" />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold font-display tracking-tight text-secondary-foreground">Xammar Digital</h2>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground bg-secondary/50 px-4 py-2 rounded-full">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <p className="text-sm font-bold tracking-wide uppercase">Connectat. Esperant el següent pas...</p>
+            </div>
+          </div>
         </motion.div>
       </div>
     );

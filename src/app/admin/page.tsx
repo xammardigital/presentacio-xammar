@@ -320,6 +320,13 @@ export default function AdminPage() {
                 {presentationState?.currentStepId ? "Presentació Activa" : "En espera"}
               </span>
             </div>
+            <Link
+              href="/admin/slides"
+              className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white transition-all hover:opacity-90"
+            >
+              <Monitor className="h-4 w-4" />
+              Editor Slides
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive transition-all hover:bg-destructive/20"
