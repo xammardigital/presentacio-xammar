@@ -243,27 +243,6 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
                   </option>
                 ))}
               </select>
-              
-              {linkedStepId && (
-                <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="flex items-center gap-3">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Activació automàtica</span>
-                  </div>
-                  <button
-                    onClick={() => setAutoActivate(!autoActivate)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      autoActivate ? "bg-primary" : "bg-muted"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        autoActivate ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Live Preview Overlay */}

@@ -136,10 +136,10 @@ export const setActive = mutation({
       await ctx.db.patch(state._id, { activeSlideId: args.id });
     }
 
-    // Handling autoActivate
+    // Always sync mobile view with the slide's linked step
     if (args.id) {
       const slide = await ctx.db.get(args.id);
-      if (slide && slide.autoActivate) {
+      if (slide) {
         if (state) {
           await ctx.db.patch(state._id, { currentStepId: slide.linkedStepId ?? null });
         } else {
