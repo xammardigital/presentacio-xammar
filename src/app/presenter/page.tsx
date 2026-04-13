@@ -89,7 +89,7 @@ export default function PresenterPage() {
           className="flex h-full w-full flex-col items-center justify-center p-24 text-center"
         >
           <div 
-            style={{ fontSize: `${slide.fontScale}clamp(1.2rem, 1.6vw, 2rem)` }} 
+            style={{ fontSize: `${slide.fontScale * 1.5}rem` }}
             className="w-[calc(100vw-100px)] max-h-[80vh] overflow-y-auto presenter-markdown"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
