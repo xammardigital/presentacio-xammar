@@ -108,7 +108,7 @@ export default function SlidesAdminPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY);
     setAdminToken(token);
   }, []);
 

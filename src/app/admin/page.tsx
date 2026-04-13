@@ -118,8 +118,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    const savedToken = sessionStorage.getItem("adminToken");
-    if (savedToken) setAdminToken(savedToken);
+    // Initialize from session or local storage
+    const storedToken = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
+    if (storedToken) setAdminToken(storedToken);
   }, []);
 
   const stepsFromServer = (useQuery(api.steps.list) as any) || [];
@@ -196,6 +197,7 @@ export default function AdminPage() {
       if (data.valid) {
         setAdminToken(tokenInput);
         sessionStorage.setItem("adminToken", tokenInput);
+        localStorage.setItem("adminToken", tokenInput);
       } else {
         setError(data.error || "Token incorrecte. Torna-ho a intentar.");
       }
@@ -208,6 +210,7 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem("adminToken");
+    localStorage.removeItem("adminToken");
     setAdminToken(null);
     setTokenInput("");
     setError(null);

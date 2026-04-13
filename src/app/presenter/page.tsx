@@ -116,6 +116,14 @@ export default function PresenterPage() {
          />
       </div>
 
+      {/* Admin Control Badge */}
+      {adminToken && (
+        <div className="absolute bottom-6 right-6 text-xs text-white/30 font-display flex items-center justify-center gap-2 group">
+            <span className="hidden opacity-0 group-hover:block transition-all">Control actiu: Usa les fletxes (← / →) per navegar</span>
+            <div className="h-2 w-2 rounded-full bg-emerald-500/50" />
+        </div>
+      )}
+
       <style jsx global>{`
         .presenter-markdown {
           line-height: 1.4;
