@@ -40,7 +40,7 @@ export const activateStep = mutation({
     if (existing) {
       await ctx.db.patch(existing._id, { currentStepId: args.id });
     } else {
-      await ctx.db.insert("presentationState", { currentStepId: args.id });
+      await ctx.db.insert("presentationState", { currentStepId: args.id, activeSlideId: null });
     }
   },
 });

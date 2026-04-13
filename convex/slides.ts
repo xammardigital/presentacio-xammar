@@ -169,11 +169,12 @@ export const saveImage = mutation({
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) throw new Error("File not found");
 
-    return await ctx.db.insert("slideAssets", {
+    const assetId = await ctx.db.insert("slideAssets", {
       slideId: args.slideId,
       storageId: args.storageId,
       url,
       altText: args.altText,
     });
+    return { id: assetId, url };
   },
 });

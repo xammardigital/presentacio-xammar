@@ -9,6 +9,7 @@
  */
 
 import type * as presentation from "../presentation.js";
+import type * as slides from "../slides.js";
 import type * as steps from "../steps.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   presentation: typeof presentation;
+  slides: typeof slides;
   steps: typeof steps;
 }>;
 

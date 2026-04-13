@@ -3,9 +3,10 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut, GripVertical } from "lucide-react";
+import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut, GripVertical, Monitor } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import {
   DndContext,
