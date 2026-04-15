@@ -1,5 +1,11 @@
 "use client";
 
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import { Loader2, Monitor as MonitorIcon, BarChart3, Users } from "lucide-react";
 
@@ -112,7 +118,7 @@ export default function PresenterPage() {
                 </div>
                 <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Resultats Live</h3>
-                    <p className="line-clamp-1 text-xs font-medium text-white/80">{activeStep.title}</p>
+                    <p className="line-clamp-1 text-xs font-medium text-white/80">{activeStep?.title}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
@@ -124,9 +130,9 @@ export default function PresenterPage() {
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={activeStep.options?.map((opt, i) => ({
+                  data={activeStep?.options?.map((opt, i) => ({
                     name: opt,
-                    votes: activeStep.votes![i],
+                    votes: activeStep?.votes?.[i] ?? 0,
                   }))}
                   layout="vertical"
                   margin={{ left: 0, right: 30, top: 0, bottom: 0 }}
@@ -141,7 +147,7 @@ export default function PresenterPage() {
                     width={80}
                   />
                   <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={14}>
-                    {activeStep.options?.map((_, index) => (
+                    {activeStep?.options?.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Bar>
@@ -150,10 +156,12 @@ export default function PresenterPage() {
             </div>
             
             <div className="mt-4 flex justify-between gap-2 border-t border-white/5 pt-4">
-                {activeStep.options?.map((opt, i) => (
+                {activeStep?.options?.map((opt, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
                         <div className="h-1.5 w-6 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                        <span className="text-[10px] font-bold text-white/40">{Math.round((activeStep.votes![i] / totalVotes) * 100)}%</span>
+                        <span className="text-[10px] font-bold text-white/40">
+                             {totalVotes > 0 ? Math.round(((activeStep?.votes?.[i] ?? 0) / totalVotes) * 100) : 0}%
+                        </span>
                     </div>
                 ))}
             </div>
