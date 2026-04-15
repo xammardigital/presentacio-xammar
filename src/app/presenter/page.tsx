@@ -20,6 +20,14 @@ export default function PresenterPage() {
     id: state?.activeSlideId ?? null 
   });
   
+  // Smooth out loading flickers: keep previous slide visible while fetching new one
+  const [displaySlide, setDisplaySlide] = useState<any>(null);
+  useEffect(() => {
+    if (slide !== undefined) {
+      setDisplaySlide(slide);
+    }
+  }, [slide]);
+  
   // Current interactive step active for the audience
   const activeStep = useQuery(api.steps.get, { 
     id: state?.currentStepId ?? null 
@@ -57,7 +65,7 @@ export default function PresenterPage() {
     );
   }
 
-  if (!state?.activeSlideId || !slide) {
+  if (!state?.activeSlideId || !displaySlide) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-[#1A365D] p-12 text-center text-white">
         <motion.div
@@ -84,7 +92,7 @@ export default function PresenterPage() {
     <div className="h-screen w-screen overflow-hidden bg-[#1A365D] text-white relative">
       <AnimatePresence mode="wait">
         <motion.div
-          key={slide._id}
+          key={displaySlide._id}
           initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -92,11 +100,11 @@ export default function PresenterPage() {
           className="flex h-full w-full flex-col items-center justify-center p-24 text-center"
         >
           <div 
-            style={{ fontSize: `${slide.fontScale * 1.5}rem` }}
+            style={{ fontSize: `${displaySlide.fontScale * 1.5}rem` }}
             className="w-[calc(100vw-100px)] max-h-[80vh] overflow-y-auto presenter-markdown"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {slide.markdownContent}
+              {displaySlide.markdownContent}
             </ReactMarkdown>
           </div>
         </motion.div>
@@ -180,7 +188,7 @@ export default function PresenterPage() {
             className="h-full bg-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.5)]"
             initial={false}
             animate={{ 
-                width: `${((slides.findIndex(s => s._id === slide._id) + 1) / (slides.length || 1)) * 100}%` 
+                width: `${((slides.findIndex(s => s._id === displaySlide._id) + 1) / (slides.length || 1)) * 100}%` 
             }}
             transition={{ type: "spring", stiffness: 50, damping: 20 }}
          />
