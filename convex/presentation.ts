@@ -53,32 +53,36 @@ export const resetPresentation = mutation({
     const serverToken = process.env.ADMIN_TOKEN;
     
     if (!serverToken) {
-      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+      return { success: false, error: "ADMIN_TOKEN no configurat al Dashboard de Convex. (Comprova les variables d'entorn a convex.dev)" };
     }
     
     if (args.adminToken !== serverToken) {
-      throw new Error("ERROR: Token d'administrador incorrecte.");
+      return { success: false, error: "Token d'administrador incorrecte." };
     }
 
-    // 1. Reset presentation state
-    const stateList = await ctx.db.query("presentationState").collect();
-    for (const state of stateList) {
-      await ctx.db.patch(state._id, {
-        currentStepId: null,
-        activeSlideId: null,
-      });
-    }
-
-    // 2. Clear all votes in steps
-    const steps = await ctx.db.query("steps").collect();
-    for (const step of steps) {
-      if (step.type === "ENCUESTA" && step.votes) {
-        await ctx.db.patch(step._id, {
-          votes: step.votes.map(() => 0),
+    try {
+      // 1. Reset presentation state
+      const stateList = await ctx.db.query("presentationState").collect();
+      for (const state of stateList) {
+        await ctx.db.patch(state._id, {
+          currentStepId: null,
+          activeSlideId: null,
         });
       }
+
+      // 2. Clear all votes in steps
+      const steps = await ctx.db.query("steps").collect();
+      for (const step of steps) {
+        if (step.type === "ENCUESTA" && step.votes) {
+          await ctx.db.patch(step._id, {
+            votes: step.votes.map(() => 0),
+          });
+        }
+      }
+      
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: "Error de base de dades: " + err.message };
     }
-    
-    return { success: true };
   },
 });
