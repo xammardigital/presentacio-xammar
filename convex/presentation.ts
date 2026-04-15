@@ -50,17 +50,23 @@ export const resetPresentation = mutation({
     adminToken: v.string(),
   },
   handler: async (ctx, args) => {
+    console.log("Reiniciant presentació...");
     const serverToken = process.env.ADMIN_TOKEN;
+    
     if (!serverToken) {
+      console.error("ADMIN_TOKEN no configurat");
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
+    
     if (args.adminToken !== serverToken) {
+      console.error("Token incorrecte");
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
 
     // 1. Reset presentation state
     const state = await ctx.db.query("presentationState").first();
     if (state) {
+      console.log("Resetejant estat global...");
       await ctx.db.patch(state._id, {
         currentStepId: null,
         activeSlideId: null,
@@ -68,13 +74,17 @@ export const resetPresentation = mutation({
     }
 
     // 2. Clear all votes in steps
+    console.log("Buidant vots de les enquestes...");
     const steps = await ctx.db.query("steps").collect();
     for (const step of steps) {
-      if (step.type === "ENCUESTA" && step.votes) {
+      if (step.type === "ENCUESTA" && Array.isArray(step.votes)) {
+        console.log(`Resetejant enquesta: ${step.title}`);
         await ctx.db.patch(step._id, {
-          votes: new Array(step.votes.length).fill(0),
+          votes: step.votes.map(() => 0),
         });
       }
     }
+    
+    return { success: true };
   },
 });
