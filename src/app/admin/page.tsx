@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut, GripVertical, Monitor } from "lucide-react";
+import { Plus, Trash2, Play, BarChart3, Type, Smile, Lock, LogOut, GripVertical, Monitor, Smartphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -329,6 +329,13 @@ export default function AdminPage() {
             >
               <Monitor className="h-4 w-4" />
               Editor Slides
+            </Link>
+            <Link
+              href="/admin/remote"
+              className="flex items-center gap-2 rounded-full border border-secondary bg-secondary/50 px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-secondary"
+            >
+              <Smartphone className="h-4 w-4" />
+              <span className="hidden sm:inline">Comandament</span>
             </Link>
             <button
               onClick={handleLogout}
