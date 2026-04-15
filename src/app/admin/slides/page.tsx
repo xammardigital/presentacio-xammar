@@ -194,13 +194,19 @@ export default function SlidesAdminPage() {
   };
 
   const handleReset = async () => {
+    if (!adminToken) {
+      alert("No tens sessió activa. Refresca la pàgina i torna a entrar.");
+      return;
+    }
     if (!confirm("⚠️ ATENCIÓ: Estàs a punt de reiniciar tota la presentació. Això posarà tots els vots de les enquestes a zero i desactivarà la slide activa. Estàs segur?")) return;
     
     try {
-      await resetPresentation({ adminToken: adminToken || "" });
+      await resetPresentation({ adminToken });
       alert("Presentació reiniciada correctament.");
     } catch (error: any) {
-      alert("Error al reiniciar la presentació: " + (error.data || error.message || "Error desconegut"));
+      console.error("Reset error full object:", error);
+      const msg = error?.data ?? error?.message ?? JSON.stringify(error) ?? "Error desconegut";
+      alert("Error al reiniciar la presentació: " + msg);
     }
   };
 

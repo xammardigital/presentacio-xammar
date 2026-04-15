@@ -1,4 +1,4 @@
-import { v, ConvexError } from "convex/values";
+import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const getState = query({
@@ -31,10 +31,10 @@ export const activateStep = mutation({
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
     if (!serverToken) {
-      throw new ConvexError("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
-      throw new ConvexError("ERROR: Token d'administrador incorrecte.");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
     const existing = await ctx.db.query("presentationState").first();
     if (existing) {
@@ -53,11 +53,11 @@ export const resetPresentation = mutation({
     const serverToken = process.env.ADMIN_TOKEN;
     
     if (!serverToken) {
-      throw new ConvexError("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     
     if (args.adminToken !== serverToken) {
-      throw new ConvexError("ERROR: Token d'administrador incorrecte.");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
 
     // 1. Reset presentation state
