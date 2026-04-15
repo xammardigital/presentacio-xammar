@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const getState = query({
@@ -31,10 +31,10 @@ export const activateStep = mutation({
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
     if (!serverToken) {
-      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+      throw new ConvexError("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
-      throw new Error("ERROR: Token d'administrador incorrecte.");
+      throw new ConvexError("ERROR: Token d'administrador incorrecte.");
     }
     const existing = await ctx.db.query("presentationState").first();
     if (existing) {
@@ -50,23 +50,19 @@ export const resetPresentation = mutation({
     adminToken: v.string(),
   },
   handler: async (ctx, args) => {
-    console.log("Reiniciant presentació...");
     const serverToken = process.env.ADMIN_TOKEN;
     
     if (!serverToken) {
-      console.error("ADMIN_TOKEN no configurat");
-      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+      throw new ConvexError("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     
     if (args.adminToken !== serverToken) {
-      console.error("Token incorrecte");
-      throw new Error("ERROR: Token d'administrador incorrecte.");
+      throw new ConvexError("ERROR: Token d'administrador incorrecte.");
     }
 
     // 1. Reset presentation state
-    const state = await ctx.db.query("presentationState").first();
-    if (state) {
-      console.log("Resetejant estat global...");
+    const stateList = await ctx.db.query("presentationState").collect();
+    for (const state of stateList) {
       await ctx.db.patch(state._id, {
         currentStepId: null,
         activeSlideId: null,
@@ -74,11 +70,9 @@ export const resetPresentation = mutation({
     }
 
     // 2. Clear all votes in steps
-    console.log("Buidant vots de les enquestes...");
     const steps = await ctx.db.query("steps").collect();
     for (const step of steps) {
-      if (step.type === "ENCUESTA" && Array.isArray(step.votes)) {
-        console.log(`Resetejant enquesta: ${step.title}`);
+      if (step.type === "ENCUESTA" && step.votes) {
         await ctx.db.patch(step._id, {
           votes: step.votes.map(() => 0),
         });
