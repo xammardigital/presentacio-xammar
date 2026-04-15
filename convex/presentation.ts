@@ -44,3 +44,34 @@ export const activateStep = mutation({
     }
   },
 });
+
+export const resetPresentation = mutation({
+  args: { 
+    adminToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const serverToken = process.env.ADMIN_TOKEN;
+    if (args.adminToken !== serverToken) {
+      throw new Error("Unauthorized");
+    }
+
+    // 1. Reset presentation state
+    const state = await ctx.db.query("presentationState").first();
+    if (state) {
+      await ctx.db.patch(state._id, {
+        currentStepId: null,
+        activeSlideId: null,
+      });
+    }
+
+    // 2. Clear all votes in steps
+    const steps = await ctx.db.query("steps").collect();
+    for (const step of steps) {
+      if (step.type === "ENCUESTA" && step.votes) {
+        await ctx.db.patch(step._id, {
+          votes: new Array(step.votes.length).fill(0),
+        });
+      }
+    }
+  },
+});

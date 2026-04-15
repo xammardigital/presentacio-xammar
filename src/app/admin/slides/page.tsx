@@ -12,7 +12,8 @@ import {
   ArrowLeft,
   Monitor,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RotateCcw
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -119,6 +120,7 @@ export default function SlidesAdminPage() {
   const reorderSlides = useMutation(api.slides.reorder);
   const removeSlide = useMutation(api.slides.remove);
   const setActiveSlide = useMutation(api.slides.setActive);
+  const resetPresentation = useMutation(api.presentation.resetPresentation);
 
   const [localSlides, setLocalSlides] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -191,6 +193,17 @@ export default function SlidesAdminPage() {
     }
   };
 
+  const handleReset = async () => {
+    if (!confirm("⚠️ ATENCIÓ: Estàs a punt de reiniciar tota la presentació. Això posarà tots els vots de les enquestes a zero i desactivarà la slide activa. Estàs segur?")) return;
+    
+    try {
+      await resetPresentation({ adminToken: adminToken || "" });
+      alert("Presentació reiniciada correctament.");
+    } catch (error) {
+      alert("Error al reiniciar la presentació.");
+    }
+  };
+
   if (!isMounted) return null;
   if (!adminToken) return (
     <div className="flex h-screen items-center justify-center">
@@ -236,6 +249,14 @@ export default function SlidesAdminPage() {
                     <ChevronRight className="h-5 w-5" />
                 </button>
             </div>
+            <button 
+                onClick={handleReset}
+                className="flex items-center gap-2 rounded-xl bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive hover:bg-destructive/20 transition-all font-display"
+                title="Reiniciar vots i estat"
+            >
+                <RotateCcw className="h-4 w-4" />
+                Reiniciar
+            </button>
             <button 
                 onClick={() => window.open("/presenter", "_blank")}
                 className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-all font-display"
