@@ -51,13 +51,13 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center justify-between rounded-2xl border p-4 transition-all ${
+      className={`group flex flex-col gap-4 sm:flex-row sm:items-center justify-between rounded-2xl border p-4 transition-all ${
         isActive 
           ? "border-primary bg-primary/5 ring-1 ring-primary/20" 
           : "border-border bg-card/50 hover:bg-card"
       }`}
     >
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
         <div {...attributes} {...listeners} className="cursor-grab hover:text-foreground text-muted-foreground touch-none">
           <GripVertical className="h-5 w-5" />
         </div>
@@ -74,7 +74,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full sm:w-auto self-end sm:self-auto">
         <button
           onClick={() => onActivate(slide._id)}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all font-display ${
@@ -222,19 +222,19 @@ export default function SlidesAdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-12 text-foreground">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-12 text-foreground">
+      <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+        <header className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
+          <div className="flex items-start sm:items-center gap-4">
+            <Link href="/admin" className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground mt-1 sm:mt-0">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold font-display text-secondary-foreground">Editor de Diapositivas</h1>
-              <p className="text-muted-foreground">Gestiona el contenido de la pantalla grande.</p>
+              <h1 className="text-2xl sm:text-3xl font-bold font-display text-secondary-foreground leading-tight">Editor de Diapositives</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">Gestiona el contingut de la pantalla gran.</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <div className="flex items-center gap-1 rounded-xl bg-secondary p-1">
                 <button 
                     onClick={() => {
@@ -276,10 +276,11 @@ export default function SlidesAdminPage() {
             </button>
             <button
                 onClick={handleCreate}
-                className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2 font-bold text-white hover:opacity-90 transition-all font-display"
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 sm:px-6 py-2 font-bold text-white hover:opacity-90 transition-all font-display"
             >
                 <Plus className="h-5 w-5" />
-                Nova Slide
+                <span className="hidden sm:inline">Nova Slide</span>
+                <span className="sm:hidden">Nova</span>
             </button>
           </div>
         </header>

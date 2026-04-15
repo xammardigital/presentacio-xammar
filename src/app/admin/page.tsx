@@ -53,21 +53,20 @@ function SortableStep({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex items-center justify-between rounded-2xl border p-5 transition-colors ${
+      className={`relative flex flex-col gap-4 sm:flex-row sm:items-center justify-between rounded-2xl border p-5 transition-colors ${
         isActive ? "border-primary bg-primary/10" : "border-border bg-card/20"
       }`}
     >
-      {/* Drag Handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="mr-3 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
-        aria-label="Arrossegar per reordenar"
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
+      <div className="flex flex-1 items-center gap-4 w-full sm:w-auto">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mr-3 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          aria-label="Arrossegar per reordenar"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
 
-      <div className="flex flex-1 items-center gap-4">
         <div
           className={`rounded-lg p-2 ${
             step.type === "BIENVENIDA"
@@ -87,10 +86,10 @@ function SortableStep({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto mt-2 sm:mt-0 gap-2">
         <button
           onClick={() => onActivate(step._id)}
-          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+          className={`flex-1 sm:flex-none flex justify-center items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${
             isActive ? "bg-primary text-white" : "bg-card border border-border text-foreground hover:bg-secondary"
           }`}
         >
@@ -305,14 +304,14 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 text-foreground lg:p-12">
-      <div className="mx-auto max-w-6xl space-y-12">
-        <header className="flex items-center justify-between">
+    <div className="min-h-screen bg-background p-4 sm:p-6 text-foreground lg:p-12">
+      <div className="mx-auto max-w-6xl space-y-8 sm:space-y-12">
+        <header className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-secondary-foreground font-display">Tauler de Control</h1>
-            <p className="text-muted-foreground">Gestiona els passos de la teva presentació interactiva.</p>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-secondary-foreground font-display">Tauler de Control</h1>
+            <p className="text-muted-foreground mt-1">Gestiona els passos de la teva presentació interactiva.</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <ThemeToggle />
             <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2">
               <div
@@ -349,7 +348,7 @@ export default function AdminPage() {
               Crear nou pas
             </h2>
             <form onSubmit={handleCreate} className="space-y-6">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {(["BIENVENIDA", "TEXTO", "ENCUESTA"] as const).map((t) => (
                   <button
                     key={t}
