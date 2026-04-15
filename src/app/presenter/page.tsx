@@ -16,14 +16,14 @@ export default function PresenterPage() {
   
   // Current slide being projected
   const slides = useQuery(api.slides.list) || [];
-  const slide = useQuery(api.slides.getById, { 
-    id: state?.activeSlideId ?? null 
-  });
+  
+  // Find the active slide instantly from the already synced local array
+  const slide = slides.find((s) => s._id === state?.activeSlideId);
   
   // Smooth out loading flickers: keep previous slide visible while fetching new one
   const [displaySlide, setDisplaySlide] = useState<any>(null);
   useEffect(() => {
-    if (slide !== undefined) {
+    if (slide) {
       setDisplaySlide(slide);
     }
   }, [slide]);
