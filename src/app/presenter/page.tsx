@@ -1,26 +1,28 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
+import { Loader2, Monitor as MonitorIcon, BarChart3, Users } from "lucide-react";
+
+const COLORS = ["#FF6B00", "#4299E1", "#48BB78", "#F6AD55"];
 
 export default function PresenterPage() {
   const state = useQuery(api.presentation.getState);
+  
+  // Current slide being projected
   const slides = useQuery(api.slides.list) || [];
   const slide = useQuery(api.slides.getById, { 
     id: state?.activeSlideId ?? null 
   });
   
-  const setActiveSlide = useMutation(api.slides.setActive);
+  // Current interactive step active for the audience
+  const activeStep = useQuery(api.steps.get, { 
+    id: state?.currentStepId ?? null 
+  });
   
+  const setActiveSlide = useMutation(api.slides.setActive);
   const [adminToken, setAdminToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check both session and local storage just in case
     const token = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
     setAdminToken(token);
   }, []);
@@ -28,23 +30,15 @@ export default function PresenterPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!adminToken || slides.length === 0 || !state?.activeSlideId) return;
-
       const currentIndex = slides.findIndex((s) => s._id === state.activeSlideId);
       if (currentIndex === -1) return;
 
       if (e.key === "ArrowRight" && currentIndex < slides.length - 1) {
-        setActiveSlide({ 
-            id: slides[currentIndex + 1]._id, 
-            adminToken 
-        });
+        setActiveSlide({ id: slides[currentIndex + 1]._id, adminToken });
       } else if (e.key === "ArrowLeft" && currentIndex > 0) {
-        setActiveSlide({ 
-            id: slides[currentIndex - 1]._id, 
-            adminToken 
-        });
+        setActiveSlide({ id: slides[currentIndex - 1]._id, adminToken });
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [adminToken, slides, state?.activeSlideId, setActiveSlide]);
@@ -77,8 +71,11 @@ export default function PresenterPage() {
     );
   }
 
+  const totalVotes = activeStep?.votes?.reduce((a, b) => a + b, 0) || 0;
+  const showPollOverlay = activeStep?.type === "ENCUESTA" && totalVotes > 0;
+
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#1A365D] text-white">
+    <div className="h-screen w-screen overflow-hidden bg-[#1A365D] text-white relative">
       <AnimatePresence mode="wait">
         <motion.div
           key={slide._id}
@@ -99,6 +96,71 @@ export default function PresenterPage() {
         </motion.div>
       </AnimatePresence>
 
+      {/* Poll Overlay Window */}
+      <AnimatePresence>
+        {showPollOverlay && (
+          <motion.div
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            className="absolute bottom-24 right-10 z-50 w-96 overflow-hidden rounded-3xl border border-white/10 bg-[#1A365D]/80 p-6 shadow-2xl backdrop-blur-xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-[#FF6B00]/20 p-2 text-[#FF6B00]">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Resultats Live</h3>
+                    <p className="line-clamp-1 text-xs font-medium text-white/80">{activeStep.title}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
+                <Users className="h-3 w-3" />
+                {totalVotes}
+              </div>
+            </div>
+
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={activeStep.options?.map((opt, i) => ({
+                    name: opt,
+                    votes: activeStep.votes![i],
+                  }))}
+                  layout="vertical"
+                  margin={{ left: 0, right: 30, top: 0, bottom: 0 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
+                    width={80}
+                  />
+                  <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={14}>
+                    {activeStep.options?.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="mt-4 flex justify-between gap-2 border-t border-white/5 pt-4">
+                {activeStep.options?.map((opt, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                        <div className="h-1.5 w-6 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-[10px] font-bold text-white/40">{Math.round((activeStep.votes![i] / totalVotes) * 100)}%</span>
+                    </div>
+                ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Brand Watermark */}
       <div className="absolute top-10 right-10 opacity-30">
           <h2 className="text-xl font-bold font-display text-white">Xammar Digital</h2>
@@ -110,7 +172,7 @@ export default function PresenterPage() {
             className="h-full bg-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.5)]"
             initial={false}
             animate={{ 
-                width: `${((slides.findIndex(s => s._id === slide._id) + 1) / slides.length) * 100}%` 
+                width: `${((slides.findIndex(s => s._id === slide._id) + 1) / (slides.length || 1)) * 100}%` 
             }}
             transition={{ type: "spring", stiffness: 50, damping: 20 }}
          />
@@ -227,23 +289,4 @@ export default function PresenterPage() {
       `}</style>
     </div>
   );
-}
-
-function MonitorIcon({ size = 24 }: { size?: number }) {
-    return (
-        <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-        >
-            <rect width="20" height="14" x="2" y="3" rx="2" />
-            <line x1="8" x2="16" y1="21" y2="21" />
-            <line x1="12" x2="12" y1="17" y2="21" />
-        </svg>
-    )
 }
