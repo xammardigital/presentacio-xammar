@@ -199,8 +199,8 @@ export default function SlidesAdminPage() {
     try {
       await resetPresentation({ adminToken: adminToken || "" });
       alert("Presentació reiniciada correctament.");
-    } catch (error) {
-      alert("Error al reiniciar la presentació.");
+    } catch (error: any) {
+      alert("Error al reiniciar la presentació: " + (error.data || error.message || "Error desconegut"));
     }
   };
 

@@ -51,8 +51,11 @@ export const resetPresentation = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    if (!serverToken) {
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+    }
     if (args.adminToken !== serverToken) {
-      throw new Error("Unauthorized");
+      throw new Error("ERROR: Token d'administrador incorrecte.");
     }
 
     // 1. Reset presentation state
