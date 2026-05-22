@@ -33,9 +33,12 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     const allSlides = await ctx.db
       .query("slides")
@@ -67,9 +70,12 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     await ctx.db.patch(args.id, {
       internalTitle: args.internalTitle,
@@ -88,9 +94,12 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     // Remove slide assets too
     const assets = await ctx.db
@@ -114,9 +123,12 @@ export const reorder = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     for (let i = 0; i < args.orderedIds.length; i++) {
       await ctx.db.patch(args.orderedIds[i], { order: i });
@@ -131,9 +143,12 @@ export const setActive = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     const state = await ctx.db.query("presentationState").first();
     let presentationId: any = null;
@@ -176,9 +191,12 @@ export const saveImage = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (args.adminToken !== serverToken) {
       throw new Error("Unauthorized");
     }
+    */
 
     const url = await ctx.storage.getUrl(args.storageId);
     if (!url) throw new Error("File not found");

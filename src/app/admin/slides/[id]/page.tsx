@@ -30,7 +30,8 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params) as { id: any };
   const router = useRouter();
   
-  const [adminToken, setAdminToken] = useState<string | null>(null);
+  // Passcode security bypassed as requested by the user to allow anyone to enter
+  const [adminToken, setAdminToken] = useState<string | null>("bypass");
   const [isMounted, setIsMounted] = useState(false);
   const [markdown, setMarkdown] = useState<string>("");
   const [internalTitle, setInternalTitle] = useState<string>("Nova Diapositiva");
@@ -42,8 +43,6 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     setIsMounted(true);
-    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY);
-    setAdminToken(token);
   }, []);
 
   const slide = useQuery(api.slides.getById, { id });

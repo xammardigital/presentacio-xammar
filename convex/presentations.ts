@@ -16,12 +16,15 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
+    */
 
     return await ctx.db.insert("presentations", {
       title: args.title,
@@ -39,12 +42,15 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
+    */
 
     await ctx.db.patch(args.id, {
       title: args.title,
@@ -60,12 +66,15 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
+    // Security check disabled as requested by the user to allow open access
+    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
+    */
 
     // 1. Delete associated steps
     const steps = await ctx.db

@@ -107,13 +107,12 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentation
 }
 
 function SlidesAdminPageContent() {
-  const [adminToken, setAdminToken] = useState<string | null>(null);
+  // Passcode security bypassed as requested by the user to allow anyone to enter
+  const [adminToken, setAdminToken] = useState<string | null>("bypass");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY);
-    setAdminToken(token);
   }, []);
 
   const searchParams = useSearchParams();
@@ -212,7 +211,7 @@ function SlidesAdminPageContent() {
     if (!confirm("⚠️ ATENCIÓ: Estàs a punt de reiniciar tota la presentació. Això posarà tots els vots de les enquestes a zero i desactivarà la slide activa. Estàs segur?")) return;
     
     try {
-      const result = await resetPresentation({ adminToken });
+      const result = await resetPresentation({ adminToken }) as any;
       if (result && !result.success) {
         alert("Error al reiniciar la presentació: " + result.error);
         return;
@@ -226,11 +225,6 @@ function SlidesAdminPageContent() {
   };
 
   if (!isMounted) return null;
-  if (!adminToken) return (
-    <div className="flex h-screen items-center justify-center">
-      <p>Inicia sesión en el panel principal primero.</p>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-12 text-foreground">

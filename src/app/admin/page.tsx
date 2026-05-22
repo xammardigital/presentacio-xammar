@@ -139,7 +139,8 @@ function SortableStep({
 
 // --- Admin Dashboard Content ---
 function AdminPageContent() {
-  const [adminToken, setAdminToken] = useState<string | null>(null);
+  // Passcode security bypassed as requested by the user to allow anyone to enter
+  const [adminToken, setAdminToken] = useState<string | null>("bypass");
   const [tokenInput, setTokenInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,8 +158,6 @@ function AdminPageContent() {
 
   useEffect(() => {
     setIsMounted(true);
-    const storedToken = sessionStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(ADMIN_TOKEN_KEY);
-    if (storedToken) setAdminToken(storedToken);
 
     // Dynamic selection via URL parameter
     const pId = searchParams.get("presentationId");
@@ -405,7 +404,7 @@ function AdminPageContent() {
     if (!confirm("⚠️ ATENCIÓ: Estàs a punt de reiniciar aquesta presentació. Això desactivarà la slide i el pas de projecció, i posarà a ZERO tots els vots rebuts. Vols continuar?")) return;
 
     try {
-      const res = await resetPresentationMutation({ adminToken });
+      const res = await resetPresentationMutation({ adminToken }) as any;
       if (res && !res.success) {
         alert("Error al reiniciar: " + res.error);
         return;
@@ -493,51 +492,6 @@ function AdminPageContent() {
     );
   }
 
-  // Render Login Panel
-  if (!adminToken) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md space-y-8 rounded-3xl border border-border bg-card p-10 text-center glass shadow-2xl"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Lock className="h-10 w-10 animate-pulse" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground font-display">Accés Restringit</h1>
-            <p className="text-sm text-muted-foreground">Introdueix el token de seguretat per gestionar el panell interactiu.</p>
-          </div>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="password"
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              placeholder="Token d'administració"
-              className={`w-full rounded-2xl border bg-background/50 p-4 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all text-center font-mono ${
-                error ? "border-destructive focus:ring-destructive/30" : "border-border"
-              }`}
-              required
-            />
-            {error && (
-              <p className="rounded-xl bg-destructive/10 border border-destructive/20 p-3.5 text-center text-xs font-semibold text-destructive">
-                ⚠️ {error}
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={isValidating}
-              className="w-full rounded-2xl bg-primary py-4 font-bold text-white transition-all hover:opacity-95 shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-50 font-display"
-            >
-              {isValidating ? "Verificant..." : "Desbloquejar Panell"}
-            </button>
-          </form>
-        </motion.div>
-      </div>
-    );
-  }
-
   // --- RENDER DASHBOARD MODE ---
   if (!selectedPresentationId) {
     const activeGlobalPres = presentations.find(p => p._id === presentationState?.activePresentationId);
@@ -569,13 +523,6 @@ function AdminPageContent() {
               >
                 <Monitor className="h-4 w-4" />
                 Obrir Projector
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-full bg-destructive/10 border border-destructive/20 px-4.5 py-2 text-xs font-bold text-destructive transition-all hover:bg-destructive/15 font-display"
-              >
-                <LogOut className="h-4 w-4" />
-                Tancar sessió
               </button>
             </div>
           </header>
