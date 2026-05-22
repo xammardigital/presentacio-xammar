@@ -1,4 +1,19 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+
+export const checkPending = query({
+  args: {},
+  handler: async (ctx) => {
+    const steps = await ctx.db.query("steps").collect();
+    const slides = await ctx.db.query("slides").collect();
+    const pendingSteps = steps.filter((s) => !s.presentationId).length;
+    const pendingSlides = slides.filter((s) => !s.presentationId).length;
+    return {
+      pendingSteps,
+      pendingSlides,
+      needsMigration: pendingSteps > 0 || pendingSlides > 0,
+    };
+  },
+});
 
 export const run = mutation({
   args: {},
@@ -58,3 +73,4 @@ export const run = mutation({
     };
   },
 });
+

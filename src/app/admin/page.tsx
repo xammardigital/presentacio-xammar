@@ -175,6 +175,25 @@ function AdminPageContent() {
     selectedPresentationId ? { presentationId: selectedPresentationId as any } : "skip"
   ) || [];
 
+  const migrationInfo = useQuery(api.migration.checkPending);
+  const runMigration = useMutation(api.migration.run);
+  const [isMigrating, setIsMigrating] = useState(false);
+
+  const handleRunMigration = async () => {
+    if (!confirm("⚠️ Estàs a punt d'executar la migració de dades. Això associarà totes les diapositives i passos existents sense presentació a la presentació 'Agentes y WordPress'. Vols continuar?")) return;
+    setIsMigrating(true);
+    try {
+      const result = await runMigration();
+      if (result?.success) {
+        alert("🎉 Migració completada amb èxit! S'han migrat " + result.slidesMigrated + " diapositives i " + result.stepsMigrated + " passos a la presentació 'Agentes y WordPress'.");
+      }
+    } catch (err: any) {
+      alert("Error al migrar: " + (err.data || err.message || "Error desconegut"));
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   const activePresentation = presentations.find((p) => p._id === selectedPresentationId);
 
   // Optimistic Dnd sorting local state
@@ -491,6 +510,29 @@ function AdminPageContent() {
               </button>
             </div>
           </header>
+
+          {migrationInfo?.needsMigration && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 rounded-3xl border border-amber-500/20 bg-amber-500/5 p-6 text-sm text-amber-600 dark:text-amber-400">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-base">Actualització de dades requerida</p>
+                  <p className="font-light text-xs text-amber-600/80 dark:text-amber-400/80">
+                    S'han detectat {migrationInfo.pendingSlides} diapositives i {migrationInfo.pendingSteps} passos antics que no pertanyen a cap presentació.
+                    Si no es migren, no apareixeran al projector ni en les edicions del panell principal.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleRunMigration}
+                disabled={isMigrating}
+                className="flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-6 py-3 font-bold text-white shadow-lg shadow-amber-500/10 disabled:opacity-50 transition-all font-display text-xs whitespace-nowrap"
+              >
+                {isMigrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                Executar Migració Ara
+              </button>
+            </div>
+          )}
 
           <div className="grid gap-8 lg:grid-cols-3 items-start">
             {/* Create Presentation Card */}
