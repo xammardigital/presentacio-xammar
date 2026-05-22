@@ -167,16 +167,29 @@ function AdminPageContent() {
     }
   }, [searchParams]);
 
-  // Convex Queries
-  const presentations = useQuery(api.presentations.list) || [];
+  // Check if backend has been deployed/updated with new schemas/endpoints
+  const hasPresentations = typeof api !== "undefined" && "presentations" in api;
+  const hasMigration = typeof api !== "undefined" && "migration" in api;
+  const isBackendUpdated = hasPresentations && hasMigration;
+
+  // Convex Queries (with safe fallbacks to prevent crashes on undeployed backend)
+  const presentations = useQuery(
+    hasPresentations ? api.presentations.list : (api.presentation.getState as any),
+    hasPresentations ? undefined : "skip"
+  ) as any[] || [];
   const presentationState = useQuery(api.presentation.getState) as any;
   const stepsFromServer = useQuery(
     api.steps.list, 
     selectedPresentationId ? { presentationId: selectedPresentationId as any } : "skip"
   ) || [];
 
-  const migrationInfo = useQuery(api.migration.checkPending);
-  const runMigration = useMutation(api.migration.run);
+  const migrationInfo = useQuery(
+    hasMigration ? api.migration.checkPending : (api.presentation.getState as any),
+    hasMigration ? undefined : "skip"
+  ) as any;
+  const runMigration = useMutation(
+    hasMigration ? api.migration.run : (api.presentation.resetPresentation as any)
+  ) as any;
   const [isMigrating, setIsMigrating] = useState(false);
 
   const handleRunMigration = async () => {
@@ -206,12 +219,22 @@ function AdminPageContent() {
     }
   }, [stepsFromServer, isDragging]);
 
-  // Mutations
-  const createPresentationMutation = useMutation(api.presentations.create);
-  const updatePresentationMutation = useMutation(api.presentations.update);
-  const removePresentationMutation = useMutation(api.presentations.remove);
+  // Mutations (with safe fallbacks to prevent crashes on undeployed backend)
+  const createPresentationMutation = useMutation(
+    hasPresentations ? api.presentations.create : (api.presentation.resetPresentation as any)
+  ) as any;
+  const updatePresentationMutation = useMutation(
+    hasPresentations ? api.presentations.update : (api.presentation.resetPresentation as any)
+  ) as any;
+  const removePresentationMutation = useMutation(
+    hasPresentations ? api.presentations.remove : (api.presentation.resetPresentation as any)
+  ) as any;
   
-  const setActivePresentationMutation = useMutation(api.presentation.setActivePresentation);
+  const setActivePresentationMutation = useMutation(
+    (typeof api !== "undefined" && "presentation" in api && "setActivePresentation" in api.presentation)
+      ? api.presentation.setActivePresentation 
+      : (api.presentation.resetPresentation as any)
+  ) as any;
   const resetPresentationMutation = useMutation(api.presentation.resetPresentation);
   
   const activateStepMutation = useMutation(api.presentation.activateStep);
@@ -423,6 +446,68 @@ function AdminPageContent() {
   };
 
   if (!isMounted) return null;
+
+  // Render Server Update Warning Screen if Backend not yet deployed
+  if (!isBackendUpdated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-2xl space-y-8 rounded-3xl border border-amber-500/20 bg-card p-8 sm:p-10 text-center glass shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600" />
+          
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+            <AlertTriangle className="h-10 w-10 animate-bounce" />
+          </div>
+          
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold tracking-tight font-display text-amber-500">
+              Desplegament del Backend Requerit
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-lg mx-auto font-light leading-relaxed">
+              El frontend de producció s'ha actualitzat correctament, però el teu servidor de <strong>Convex</strong> encara està executant una versió antiga.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background/50 p-6 text-left space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Com solucionar-ho:</h3>
+            <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-2.5 font-light">
+              <li>Obre una terminal a la carpeta arrel del projecte local.</li>
+              <li>Executa la següent comanda per pujar el backend i les noves taules a producció:</li>
+            </ol>
+            
+            <div className="relative group rounded-xl bg-secondary/80 border border-border p-4.5 font-mono text-xs text-primary flex items-center justify-between overflow-x-auto">
+              <span>npx convex deploy</span>
+              <span className="text-[10px] bg-primary/10 px-2 py-1 rounded text-primary font-sans font-bold">
+                Executa a la terminal
+              </span>
+            </div>
+            
+            <p className="text-[11px] text-muted-foreground/80 font-light leading-relaxed">
+              💡 <strong>Consell:</strong> Si tens el projecte connectat a GitHub mitjançant la integració de Convex, el desplegament es farà automàticament. Si no, executa <code className="bg-secondary px-1.5 py-0.5 rounded text-amber-500 font-semibold font-mono">npx convex deploy</code> localment per actualitzar el teu backend de producció.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 px-8 py-3.5 font-bold text-white shadow-lg shadow-amber-500/10 transition-all font-display text-sm animate-pulse"
+            >
+              Comprovar de Nou
+            </button>
+            <Link
+              href="/"
+              className="rounded-2xl border border-border bg-card hover:bg-secondary/40 px-8 py-3.5 font-bold text-foreground transition-all font-display text-sm"
+            >
+              Tornar a l'Inici
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Render Login Panel
   if (!adminToken) {
