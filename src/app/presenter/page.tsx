@@ -11,6 +11,112 @@ import { Loader2, Monitor as MonitorIcon, BarChart3, Users } from "lucide-react"
 
 const COLORS = ["#FF6B00", "#4299E1", "#48BB78", "#F6AD55"];
 
+function getYouTubeId(url: string) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\/shorts\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+const customComponents = {
+  img: ({ node, src, alt, ...props }: any) => {
+    if (!src) return null;
+    
+    const isYouTube = (alt && alt.startsWith("youtube")) || src.includes("youtube.com") || src.includes("youtu.be");
+    
+    if (isYouTube) {
+      const videoId = getYouTubeId(src);
+      if (!videoId) return <p className="text-destructive text-sm font-semibold">Enllaç de YouTube no vàlid: {src}</p>;
+      
+      const parts = alt ? alt.split("|") : [];
+      const width = parts[1]?.trim() || "100%";
+      const height = parts[2]?.trim() || "aspect-video";
+      const position = parts[3]?.trim() || "center";
+      
+      // Setup position styles
+      let alignClass = "mx-auto";
+      if (position === "left") alignClass = "mr-auto ml-0";
+      if (position === "right") alignClass = "ml-auto mr-0";
+      
+      // Setup height style
+      const heightStyle = height.endsWith("px") || height.endsWith("vh") || height.endsWith("%") || height.endsWith("rem")
+        ? { height }
+        : height === "aspect-video" ? {} : { height: `${height}px` };
+        
+      const heightClass = height === "aspect-video" ? "aspect-video w-full" : "w-full";
+      
+      return (
+        <div className="my-6 flex w-full">
+          <div 
+            style={{ 
+              width: width.endsWith("%") || width.endsWith("px") || width.endsWith("vw") || width.endsWith("rem") ? width : `${width}px`, 
+              ...heightStyle 
+            }}
+            className={`overflow-hidden rounded-2xl shadow-2xl border border-white/10 ${alignClass} ${heightClass}`}
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              title={alt || "YouTube video"}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        </div>
+      );
+    }
+    
+    // Fallback to standard image
+    return (
+      <img 
+        src={src} 
+        alt={alt || ""} 
+        {...props} 
+        style={{ maxWidth: "90%", maxHeight: "50vh" }}
+        className="mx-auto rounded-2xl shadow-2xl border border-white/5 object-contain my-6 block" 
+      />
+    );
+  },
+  a: ({ node, href, children, ...props }: any) => {
+    if (href) {
+      const isYouTube = href.includes("youtube.com") || href.includes("youtu.be");
+      if (isYouTube) {
+        const videoId = getYouTubeId(href);
+        if (videoId) {
+          return (
+            <div className="my-6 flex w-full">
+              <div 
+                className="overflow-hidden rounded-2xl shadow-2xl border border-white/10 mx-auto aspect-video w-[80%] max-w-full"
+              >
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  title={typeof children === "string" ? children : "YouTube video"}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          );
+        }
+      }
+    }
+    
+    return (
+      <a 
+        href={href} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        {...props} 
+        className="text-[#FF6B00] underline font-medium hover:text-[#FF8C33] transition-colors"
+      >
+        {children}
+      </a>
+    );
+  }
+};
+
 export default function PresenterPage() {
   const state = useQuery(api.presentation.getState);
   
@@ -104,7 +210,7 @@ export default function PresenterPage() {
             style={{ fontSize: `${displaySlide.fontScale * 1.5}rem` }}
             className="w-[calc(100vw-100px)] max-h-[80vh] overflow-y-auto presenter-markdown"
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={customComponents}>
               {displaySlide.markdownContent}
             </ReactMarkdown>
           </div>
