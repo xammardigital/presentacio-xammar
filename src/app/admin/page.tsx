@@ -174,24 +174,16 @@ function AdminPageContent() {
   const hasMigration = true;
   const isBackendUpdated = true;
 
-  // Convex Queries (with safe fallbacks to prevent crashes on undeployed backend)
-  const presentations = useQuery(
-    hasPresentations ? api.presentations.list : (api.presentation.getState as any),
-    hasPresentations ? undefined : "skip"
-  ) as any[] || [];
+  // Convex Queries
+  const presentations = useQuery(api.presentations.list) || [];
   const presentationState = useQuery(api.presentation.getState) as any;
   const stepsFromServer = useQuery(
     api.steps.list, 
     selectedPresentationId ? { presentationId: selectedPresentationId as any } : "skip"
   ) || [];
 
-  const migrationInfo = useQuery(
-    hasMigration ? api.migration.checkPending : (api.presentation.getState as any),
-    hasMigration ? undefined : "skip"
-  ) as any;
-  const runMigration = useMutation(
-    hasMigration ? api.migration.run : (api.presentation.resetPresentation as any)
-  ) as any;
+  const migrationInfo = useQuery(api.migration.checkPending) as any;
+  const runMigration = useMutation(api.migration.run) as any;
   const [isMigrating, setIsMigrating] = useState(false);
 
   const handleRunMigration = async () => {
@@ -221,16 +213,10 @@ function AdminPageContent() {
     }
   }, [stepsFromServer, isDragging]);
 
-  // Mutations (with safe fallbacks to prevent crashes on undeployed backend)
-  const createPresentationMutation = useMutation(
-    hasPresentations ? api.presentations.create : (api.presentation.resetPresentation as any)
-  ) as any;
-  const updatePresentationMutation = useMutation(
-    hasPresentations ? api.presentations.update : (api.presentation.resetPresentation as any)
-  ) as any;
-  const removePresentationMutation = useMutation(
-    hasPresentations ? api.presentations.remove : (api.presentation.resetPresentation as any)
-  ) as any;
+  // Mutations
+  const createPresentationMutation = useMutation(api.presentations.create);
+  const updatePresentationMutation = useMutation(api.presentations.update);
+  const removePresentationMutation = useMutation(api.presentations.remove);
   
   const setActivePresentationMutation = useMutation(api.presentation.setActivePresentation);
   const resetPresentationMutation = useMutation(api.presentation.resetPresentation);
