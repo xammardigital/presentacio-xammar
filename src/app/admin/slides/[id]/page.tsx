@@ -74,7 +74,7 @@ const customComponents = {
             className={`overflow-hidden rounded-2xl shadow-xl border border-white/10 ${alignClass} ${heightClass}`}
           >
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
               title={alt || "YouTube video"}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -109,7 +109,7 @@ const customComponents = {
                 className="overflow-hidden rounded-2xl shadow-xl border border-white/10 mx-auto aspect-video w-[80%] max-w-full"
               >
                 <iframe
-                  src={`https://www.youtube.com/embed/${videoId}`}
+                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
                   title={typeof children === "string" ? children : "YouTube video"}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
