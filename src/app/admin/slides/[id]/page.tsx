@@ -51,6 +51,22 @@ const customComponents = {
       const width = parts[1]?.trim() || "100%";
       const height = parts[2]?.trim() || "aspect-video";
       const position = parts[3]?.trim() || "center";
+      const isFullScreen = parts[4]?.trim() === "fullscreen";
+      
+      if (isFullScreen) {
+        return (
+          <div className="absolute inset-0 w-full h-full z-30 bg-black rounded-2xl overflow-hidden">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
+              title={alt || "YouTube video"}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        );
+      }
       
       // Setup position styles
       let alignClass = "mx-auto";
@@ -158,6 +174,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   const [ytHeightMode, setYtHeightMode] = useState<"aspect" | "custom">("aspect");
   const [ytCustomHeight, setYtCustomHeight] = useState("350px");
   const [ytAlign, setYtAlign] = useState("center");
+  const [ytFullScreen, setYtFullScreen] = useState(false);
 
   const insertAtCursor = (textToInsert: string) => {
     const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement;
@@ -194,10 +211,12 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
     }
     
     const height = ytHeightMode === "aspect" ? "aspect-video" : ytCustomHeight;
-    const markdownTag = `\n\n![youtube|${ytWidth}|${height}|${ytAlign}](${ytUrl})\n`;
+    const fullscreenParam = ytFullScreen ? "fullscreen" : "normal";
+    const markdownTag = `\n\n![youtube|${ytWidth}|${height}|${ytAlign}|${fullscreenParam}](${ytUrl})\n`;
     
     insertAtCursor(markdownTag);
     setYtUrl(""); // Reset input URL
+    setYtFullScreen(false); // Reset fullscreen option
   };
 
   useEffect(() => {
@@ -607,6 +626,30 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
 
+                {/* Full Screen option */}
+                <div className="space-y-1">
+                  <span className="text-muted-foreground font-medium">Pantalla completa (cobreix la diapositiva)</span>
+                  <div className="flex gap-1.5 p-0.5 bg-secondary/50 rounded-lg max-w-[150px]">
+                    {[
+                      { label: "Sí", val: true },
+                      { label: "No", val: false }
+                    ].map((opt) => (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => setYtFullScreen(opt.val)}
+                        className={`flex-1 rounded-md py-1.5 text-[10px] font-bold transition-all cursor-pointer ${
+                          ytFullScreen === opt.val 
+                            ? "bg-white text-primary shadow-sm dark:bg-slate-800" 
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Insert Button */}
                 <button
                   type="button"
@@ -622,7 +665,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
             {/* Live Preview Overlay */}
             <div className="space-y-4">
                <label className="text-sm font-semibold">Preview real (Estil Presentador)</label>
-               <div className="aspect-video w-full rounded-2xl bg-[#1A365D] p-8 text-white shadow-2xl overflow-y-auto flex flex-col items-center justify-start text-center">
+               <div className="relative aspect-video w-full rounded-2xl bg-[#1A365D] p-8 text-white shadow-2xl overflow-hidden flex flex-col items-center justify-start text-center">
                   <div style={{ fontSize: `${(fontScale || 1.0) * 0.8}rem` }} className="w-full max-w-full prose prose-invert prose-orange presenter-markdown text-left">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} components={customComponents}>
                       {markdown}

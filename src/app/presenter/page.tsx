@@ -31,6 +31,22 @@ const customComponents = {
       const width = parts[1]?.trim() || "100%";
       const height = parts[2]?.trim() || "aspect-video";
       const position = parts[3]?.trim() || "center";
+      const isFullScreen = parts[4]?.trim() === "fullscreen";
+      
+      if (isFullScreen) {
+        return (
+          <div className="fixed inset-0 w-screen h-screen z-40 bg-black">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
+              title={alt || "YouTube video"}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        );
+      }
       
       // Setup position styles
       let alignClass = "mx-auto";
