@@ -168,9 +168,11 @@ function AdminPageContent() {
   }, [searchParams]);
 
   // Check if backend has been deployed/updated with new schemas/endpoints
-  const hasPresentations = typeof api !== "undefined" && "presentations" in api;
-  const hasMigration = typeof api !== "undefined" && "migration" in api;
-  const isBackendUpdated = hasPresentations && hasMigration;
+  // Since the user has deployed the backend using 'npx convex deploy', these endpoints are 100% active.
+  // The 'in' operator fails on the Convex generated 'anyApi' Proxy at runtime.
+  const hasPresentations = true;
+  const hasMigration = true;
+  const isBackendUpdated = true;
 
   // Convex Queries (with safe fallbacks to prevent crashes on undeployed backend)
   const presentations = useQuery(
@@ -230,11 +232,7 @@ function AdminPageContent() {
     hasPresentations ? api.presentations.remove : (api.presentation.resetPresentation as any)
   ) as any;
   
-  const setActivePresentationMutation = useMutation(
-    (typeof api !== "undefined" && "presentation" in api && "setActivePresentation" in api.presentation)
-      ? api.presentation.setActivePresentation 
-      : (api.presentation.resetPresentation as any)
-  ) as any;
+  const setActivePresentationMutation = useMutation(api.presentation.setActivePresentation);
   const resetPresentationMutation = useMutation(api.presentation.resetPresentation);
   
   const activateStepMutation = useMutation(api.presentation.activateStep);
