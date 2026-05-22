@@ -2,11 +2,18 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  presentations: defineTable({
+    title: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
   presentationState: defineTable({
+    activePresentationId: v.optional(v.union(v.id("presentations"), v.null())),
     currentStepId: v.union(v.id("steps"), v.null()),
     activeSlideId: v.optional(v.union(v.id("slides"), v.null())),
   }),
   steps: defineTable({
+    presentationId: v.optional(v.id("presentations")),
     type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),
     title: v.string(),
     content: v.optional(v.string()), // Used for TEXTO
@@ -15,6 +22,7 @@ export default defineSchema({
     order: v.number(),
   }),
   slides: defineTable({
+    presentationId: v.optional(v.id("presentations")),
     order: v.number(),
     internalTitle: v.optional(v.string()),
     markdownContent: v.string(),
@@ -29,3 +37,4 @@ export default defineSchema({
     altText: v.string(),
   }),
 });
+

@@ -62,21 +62,26 @@ export const resetPresentation = mutation({
 
     try {
       // 1. Reset presentation state
-      const stateList = await ctx.db.query("presentationState").collect();
-      for (const state of stateList) {
+      const state = await ctx.db.query("presentationState").first();
+      if (state) {
         await ctx.db.patch(state._id, {
           currentStepId: null,
           activeSlideId: null,
         });
-      }
 
-      // 2. Clear all votes in steps
-      const steps = await ctx.db.query("steps").collect();
-      for (const step of steps) {
-        if (step.type === "ENCUESTA" && step.votes) {
-          await ctx.db.patch(step._id, {
-            votes: step.votes.map(() => 0),
-          });
+        // 2. Clear all votes in steps of the active presentation
+        if (state.activePresentationId) {
+          const steps = await ctx.db
+            .query("steps")
+            .filter((q) => q.eq(q.field("presentationId"), state.activePresentationId))
+            .collect();
+          for (const step of steps) {
+            if (step.type === "ENCUESTA" && step.votes) {
+              await ctx.db.patch(step._id, {
+                votes: step.votes.map(() => 0),
+              });
+            }
+          }
         }
       }
       
@@ -86,3 +91,51 @@ export const resetPresentation = mutation({
     }
   },
 });
+
+export const setActivePresentation = mutation({
+  args: {
+    id: v.union(v.id("presentations"), v.null()),
+    adminToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const serverToken = process.env.ADMIN_TOKEN;
+    if (!serverToken) {
+      throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
+    }
+    if (args.adminToken !== serverToken) {
+      throw new Error("ERROR: Token d'administrador incorrecte.");
+    }
+
+    const existing = await ctx.db.query("presentationState").first();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        activePresentationId: args.id,
+        currentStepId: null,
+        activeSlideId: null,
+      });
+    } else {
+      await ctx.db.insert("presentationState", {
+        activePresentationId: args.id,
+        currentStepId: null,
+        activeSlideId: null,
+      });
+    }
+
+    if (args.id) {
+      // Reinicio de votos for the activated presentation
+      const steps = await ctx.db
+        .query("steps")
+        .filter((q) => q.eq(q.field("presentationId"), args.id))
+        .collect();
+
+      for (const step of steps) {
+        if (step.type === "ENCUESTA" && step.votes) {
+          await ctx.db.patch(step._id, {
+            votes: step.votes.map(() => 0),
+          });
+        }
+      }
+    }
+  },
+});
+

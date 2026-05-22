@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as migration from "../migration.js";
 import type * as presentation from "../presentation.js";
+import type * as presentations from "../presentations.js";
 import type * as slides from "../slides.js";
 import type * as steps from "../steps.js";
 
@@ -19,7 +21,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  migration: typeof migration;
   presentation: typeof presentation;
+  presentations: typeof presentations;
   slides: typeof slides;
   steps: typeof steps;
 }>;

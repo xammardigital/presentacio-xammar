@@ -2,9 +2,13 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const steps = await ctx.db.query("steps").collect();
+  args: { presentationId: v.optional(v.id("presentations")) },
+  handler: async (ctx, args) => {
+    if (!args.presentationId) return [];
+    const steps = await ctx.db
+      .query("steps")
+      .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
+      .collect();
     return steps.sort((a, b) => a.order - b.order);
   },
 });
@@ -41,6 +45,7 @@ export const reorder = mutation({
 
 export const create = mutation({
   args: {
+    presentationId: v.id("presentations"),
     type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),
     title: v.string(),
     content: v.optional(v.string()),
@@ -55,9 +60,13 @@ export const create = mutation({
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
-    const allSteps = await ctx.db.query("steps").collect();
+    const allSteps = await ctx.db
+      .query("steps")
+      .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
+      .collect();
     const maxOrder = allSteps.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
     const stepId = await ctx.db.insert("steps", {
+      presentationId: args.presentationId,
       type: args.type,
       title: args.title,
       content: args.content,

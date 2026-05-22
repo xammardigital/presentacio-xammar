@@ -17,6 +17,8 @@ import {
   Smartphone
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import {
   DndContext,
   closestCenter,
@@ -38,7 +40,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const ADMIN_TOKEN_KEY = "adminToken";
 
-function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
+function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentationId }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slide._id });
 
   const style = {
@@ -88,7 +90,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
           {isActive ? "ACTIVA" : "ACTIVAR"}
         </button>
         <Link
-          href={`/admin/slides/${slide._id}`}
+          href={`/admin/slides/${slide._id}?presentationId=${presentationId || ""}`}
           className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-foreground transition-all"
         >
           <Edit3 className="h-5 w-5" />
@@ -104,7 +106,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove }: any) {
   );
 }
 
-export default function SlidesAdminPage() {
+function SlidesAdminPageContent() {
   const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -114,8 +116,11 @@ export default function SlidesAdminPage() {
     setAdminToken(token);
   }, []);
 
-  const slides = useQuery(api.slides.list) || [];
+  const searchParams = useSearchParams();
   const presentationState = useQuery(api.presentation.getState);
+  const presentationId = searchParams.get("presentationId") || presentationState?.activePresentationId;
+
+  const slides = useQuery(api.slides.list, presentationId ? { presentationId: presentationId as any } : "skip") || [];
   
   const createSlide = useMutation(api.slides.create);
   const reorderSlides = useMutation(api.slides.reorder);
@@ -163,8 +168,13 @@ export default function SlidesAdminPage() {
   };
 
   const handleCreate = async () => {
+    if (!presentationId) {
+      alert("No hi ha cap presentació activa o seleccionada.");
+      return;
+    }
     try {
       await createSlide({
+        presentationId: presentationId as any,
         internalTitle: "Nova Diapositiva",
         markdownContent: "# Nova Diapositiva\nEscribe aquí tu contenido...",
         fontScale: 1.0,
@@ -227,12 +237,12 @@ export default function SlidesAdminPage() {
       <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
         <header className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
           <div className="flex items-start sm:items-center gap-4">
-            <Link href="/admin" className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground mt-1 sm:mt-0">
+            <Link href={`/admin${presentationId ? `?presentationId=${presentationId}` : ""}`} className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground mt-1 sm:mt-0">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold font-display text-secondary-foreground leading-tight">Editor de Diapositives</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">Gestiona el contingut de la pantalla gran.</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 font-light">Gestiona el contingut de la pantalla gran.</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -311,6 +321,7 @@ export default function SlidesAdminPage() {
                         isActive={presentationState?.activeSlideId === slide._id}
                         onActivate={handleActivate}
                         onRemove={handleRemove}
+                        presentationId={presentationId}
                       />
                     </motion.div>
                   ))}
@@ -329,3 +340,42 @@ export default function SlidesAdminPage() {
     </div>
   );
 }
+
+export default function SlidesAdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Carregant l'editor de diapositives...</p>
+        </div>
+      </div>
+    }>
+      <SlidesAdminPageContent />
+    </Suspense>
+  );
+}
+
+const Loader2 = ({ className }: { className?: string }) => (
+  <svg
+    className={`animate-spin ${className}`}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    />
+  </svg>
+);
+

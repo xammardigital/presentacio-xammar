@@ -18,9 +18,10 @@ export default function RemoteControlPage() {
     setAdminToken(token);
   }, []);
 
-  const slides = useQuery(api.slides.list) || [];
   const presentationState = useQuery(api.presentation.getState);
+  const slides = useQuery(api.slides.list, presentationState?.activePresentationId ? { presentationId: presentationState.activePresentationId } : "skip") || [];
   const setActiveSlide = useMutation(api.slides.setActive);
+
 
   const activeIndex = slides.findIndex((s: any) => s._id === presentationState?.activeSlideId);
   const canGoPrev = activeIndex > 0;

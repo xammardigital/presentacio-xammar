@@ -2,9 +2,13 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const slides = await ctx.db.query("slides").collect();
+  args: { presentationId: v.optional(v.id("presentations")) },
+  handler: async (ctx, args) => {
+    if (!args.presentationId) return [];
+    const slides = await ctx.db
+      .query("slides")
+      .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
+      .collect();
     return slides.sort((a, b) => a.order - b.order);
   },
 });
@@ -19,6 +23,7 @@ export const getById = query({
 
 export const create = mutation({
   args: {
+    presentationId: v.id("presentations"),
     internalTitle: v.optional(v.string()),
     markdownContent: v.string(),
     fontScale: v.union(v.literal(0.8), v.literal(1.0), v.literal(1.2), v.literal(1.5), v.literal(2.0)),
@@ -32,10 +37,14 @@ export const create = mutation({
       throw new Error("Unauthorized");
     }
 
-    const allSlides = await ctx.db.query("slides").collect();
+    const allSlides = await ctx.db
+      .query("slides")
+      .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
+      .collect();
     const maxOrder = allSlides.reduce((max, s) => Math.max(max, s.order ?? 0), -1);
 
     return await ctx.db.insert("slides", {
+      presentationId: args.presentationId,
       internalTitle: args.internalTitle,
       markdownContent: args.markdownContent,
       fontScale: args.fontScale,
@@ -127,28 +136,29 @@ export const setActive = mutation({
     }
 
     const state = await ctx.db.query("presentationState").first();
-    if (!state) {
-      await ctx.db.insert("presentationState", {
-        currentStepId: null,
-        activeSlideId: args.id,
-      });
-    } else {
-      await ctx.db.patch(state._id, { activeSlideId: args.id });
-    }
+    let presentationId: any = null;
+    let linkedStepId: any = null;
 
-    // Always sync mobile view with the slide's linked step
     if (args.id) {
       const slide = await ctx.db.get(args.id);
       if (slide) {
-        if (state) {
-          await ctx.db.patch(state._id, { currentStepId: slide.linkedStepId ?? null });
-        } else {
-          await ctx.db.insert("presentationState", {
-            currentStepId: slide.linkedStepId ?? null,
-            activeSlideId: args.id,
-          });
-        }
+        presentationId = slide.presentationId ?? null;
+        linkedStepId = slide.linkedStepId ?? null;
       }
+    }
+
+    if (!state) {
+      await ctx.db.insert("presentationState", {
+        activePresentationId: presentationId,
+        currentStepId: linkedStepId,
+        activeSlideId: args.id,
+      });
+    } else {
+      await ctx.db.patch(state._id, { 
+        activeSlideId: args.id,
+        currentStepId: linkedStepId,
+        activePresentationId: presentationId || state.activePresentationId
+      });
     }
   },
 });

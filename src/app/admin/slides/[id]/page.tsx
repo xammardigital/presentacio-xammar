@@ -47,7 +47,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   }, []);
 
   const slide = useQuery(api.slides.getById, { id });
-  const steps = useQuery(api.steps.list) || [];
+  const steps = useQuery(api.steps.list, slide?.presentationId ? { presentationId: slide.presentationId } : "skip") || [];
   
   const updateSlide = useMutation(api.slides.update);
   const generateUploadUrl = useMutation(api.slides.generateUploadUrl);
@@ -130,11 +130,11 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
       {/* Header */}
       <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
         <div className="flex items-center gap-4">
-          <Link href="/admin/slides" className="rounded-full hover:bg-secondary p-2 transition-colors">
+          <Link href={`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`} className="rounded-full hover:bg-secondary p-2 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex items-center gap-2 text-sm text-muted-foreground w-full max-w-sm">
-            <Link href="/admin/slides" className="hover:text-foreground">Slides</Link>
+            <Link href={`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`} className="hover:text-foreground">Slides</Link>
             <ChevronRight className="h-4 w-4" />
             <input 
               value={internalTitle}
