@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { 
   ArrowLeft, 
   Save, 
@@ -16,7 +16,10 @@ import {
   AlignCenter,
   AlignRight,
   Video,
-  Play
+  Play,
+  Volume2,
+  VolumeX,
+  Music
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,9 +40,116 @@ function getYouTubeId(url: string) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+function BackgroundAudio({ src, volume = 0.15 }: { src: string; volume?: number }) {
+  const [muted, setMuted] = useState(true); // Default to muted in the editor, so it doesn't scare the admin
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeIntervalRef = useRef<any>(null);
+
+  useEffect(() => {
+    const audio = new Audio(src);
+    audio.loop = true;
+    audio.volume = 0;
+    audioRef.current = audio;
+
+    if (!muted) {
+      audio.play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.log("Audio autoplay failed or blocked:", err);
+          setIsPlaying(false);
+        });
+
+      // Fade in over 3 seconds (3000ms)
+      clearInterval(fadeIntervalRef.current);
+      const fadeDuration = 3000;
+      const intervalStep = 50;
+      const steps = fadeDuration / intervalStep;
+      const volumeStep = volume / steps;
+      let currentStep = 0;
+
+      fadeIntervalRef.current = setInterval(() => {
+        currentStep++;
+        if (audioRef.current) {
+          audioRef.current.volume = Math.min(volume, currentStep * volumeStep);
+        }
+        if (currentStep >= steps) {
+          clearInterval(fadeIntervalRef.current);
+        }
+      }, intervalStep);
+    } else {
+      audio.pause();
+      setIsPlaying(false);
+    }
+
+    return () => {
+      clearInterval(fadeIntervalRef.current);
+      const targetAudio = audio;
+      const startVolume = targetAudio.volume;
+      const fadeDuration = 3000;
+      const intervalStep = 50;
+      const steps = fadeDuration / intervalStep;
+      const volumeStep = startVolume / steps; // Fade out from its current volume!
+      let currentOutStep = steps;
+
+      const fadeOutInterval = setInterval(() => {
+        currentOutStep--;
+        if (targetAudio) {
+          targetAudio.volume = Math.max(0, currentOutStep * volumeStep);
+        }
+        if (currentOutStep <= 0) {
+          clearInterval(fadeOutInterval);
+          if (targetAudio) {
+            targetAudio.pause();
+          }
+        }
+      }, intervalStep);
+    };
+  }, [src, volume, muted]);
+
+  return (
+    <div className="absolute bottom-4 left-4 z-50 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 pl-4 pr-5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Animated Soundwave */}
+      <div className="flex items-end gap-0.5 h-4 w-4 mr-1">
+        <span className={`w-0.75 bg-[#FF6B00] rounded-full transition-all duration-200 ${isPlaying ? 'animate-bounce h-full' : 'h-1'}`} style={{ animationDelay: '0.1s', animationDuration: '0.6s' }} />
+        <span className={`w-0.75 bg-[#FF6B00] rounded-full transition-all duration-200 ${isPlaying ? 'animate-bounce h-2/3' : 'h-1.5'}`} style={{ animationDelay: '0.3s', animationDuration: '0.8s' }} />
+        <span className={`w-0.75 bg-[#FF6B00] rounded-full transition-all duration-200 ${isPlaying ? 'animate-bounce h-5/6' : 'h-1'}`} style={{ animationDelay: '0.2s', animationDuration: '0.5s' }} />
+        <span className={`w-0.75 bg-[#FF6B00] rounded-full transition-all duration-200 ${isPlaying ? 'animate-bounce h-1/2' : 'h-2'}`} style={{ animationDelay: '0.4s', animationDuration: '0.7s' }} />
+      </div>
+
+      <div className="flex flex-col text-left">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 font-display">Àudio de fons</span>
+        <span className="text-xs font-semibold text-white truncate max-w-[120px]" title={src.split('/').pop()}>
+          Ambient Actiu
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setMuted(!muted)}
+        className={`ml-2 flex h-8 w-8 items-center justify-center rounded-xl transition-all active:scale-90 cursor-pointer ${
+          muted 
+            ? "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" 
+            : "bg-[#FF6B00] text-white shadow-[0_0_15px_rgba(255,107,0,0.4)]"
+        }`}
+        title={muted ? "Activar so per provar" : "Silenciar àudio"}
+      >
+        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 const customComponents = {
   img: ({ node, src, alt, ...props }: any) => {
     if (!src) return null;
+    
+    const isBgAudio = alt && alt.startsWith("bg-audio");
+    if (isBgAudio) {
+      const parts = alt.split("|");
+      const volume = parseFloat(parts[1]?.trim() || "0.15");
+      return <BackgroundAudio src={src} volume={volume} />;
+    }
     
     const isYouTube = (alt && alt.startsWith("youtube")) || src.includes("youtube.com") || src.includes("youtu.be");
     
@@ -176,6 +286,11 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   const [ytAlign, setYtAlign] = useState("center");
   const [ytFullScreen, setYtFullScreen] = useState(false);
 
+  // Audio Assistant states
+  const [bgAudioUrl, setBgAudioUrl] = useState("");
+  const [bgAudioVolume, setBgAudioVolume] = useState(15); // default background ambiance volume is 15%
+  const [isAudioUploading, setIsAudioUploading] = useState(false);
+
   const insertAtCursor = (textToInsert: string) => {
     const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement;
     if (textarea) {
@@ -217,6 +332,49 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
     insertAtCursor(markdownTag);
     setYtUrl(""); // Reset input URL
     setYtFullScreen(false); // Reset fullscreen option
+  };
+
+  const handleInsertAudio = () => {
+    if (!bgAudioUrl) {
+      alert("Si us plau, introdueix un enllaç d'àudio o puja'n un.");
+      return;
+    }
+    const vol = (bgAudioVolume / 100).toFixed(2);
+    const audioTag = `\n\n![bg-audio|${vol}](${bgAudioUrl})\n`;
+    insertAtCursor(audioTag);
+    setBgAudioUrl("");
+  };
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !adminToken) return;
+
+    setIsAudioUploading(true);
+    try {
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      
+      const { storageId } = await result.json();
+      
+      const asset = await saveImage({
+        slideId: id,
+        storageId,
+        altText: `bg-audio|${(bgAudioVolume / 100).toFixed(2)}`,
+        adminToken,
+      });
+
+      setBgAudioUrl(asset.url);
+      alert("Àudio carregat correctament! Ara pots prémer 'Inserir Àudio Ambient' per afegir-lo a la teva diapositiva.");
+    } catch (error) {
+      console.error(error);
+      alert("Error al carregar l'àudio");
+    } finally {
+      setIsAudioUploading(false);
+    }
   };
 
   useEffect(() => {
@@ -658,6 +816,91 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />
                   Inserir Vídeo
+                </button>
+              </div>
+            </div>
+
+            {/* Background Audio Assistant */}
+            <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <label className="text-sm font-semibold flex items-center gap-2 text-primary font-display">
+                <Music className="h-5 w-5" />
+                Assistent d'Àudio de Fons
+              </label>
+
+              <div className="space-y-3 text-xs">
+                {/* Past URL */}
+                <div className="space-y-1">
+                  <span className="text-muted-foreground font-medium">Enllaç d'Àudio (MP3 / WAV)</span>
+                  <input
+                    type="text"
+                    value={bgAudioUrl}
+                    onChange={(e) => setBgAudioUrl(e.target.value)}
+                    placeholder="https://exemple.com/musica.mp3"
+                    className="w-full rounded-xl border border-border bg-secondary/30 p-2.5 outline-none focus:ring-2 focus:ring-primary/50 text-xs"
+                  />
+                </div>
+
+                {/* Upload File */}
+                <div className="space-y-1">
+                  <span className="text-muted-foreground font-medium">O penja un arxiu d'àudio local</span>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioUpload}
+                      disabled={isAudioUploading}
+                      className="hidden"
+                      id="audio-upload-input"
+                    />
+                    <label
+                      htmlFor="audio-upload-input"
+                      className={`flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-secondary/20 p-4 text-center text-xs font-semibold cursor-pointer hover:bg-secondary/40 transition-colors ${
+                        isAudioUploading ? "pointer-events-none opacity-50" : ""
+                      }`}
+                    >
+                      {isAudioUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          <span>Pujant àudio a Convex...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Music className="h-4 w-4 text-muted-foreground" />
+                          <span>Tria o arrossega un arxiu MP3/WAV</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                {/* Volume slider */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-muted-foreground font-medium">
+                    <span>Volum d'ambient</span>
+                    <span className="font-bold text-foreground">{bgAudioVolume}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={bgAudioVolume}
+                    onChange={(e) => setBgAudioVolume(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Per defecte és del 15% per quedar com a música de fons suau.
+                  </p>
+                </div>
+
+                {/* Insert Button */}
+                <button
+                  type="button"
+                  onClick={handleInsertAudio}
+                  disabled={!bgAudioUrl}
+                  className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-2 px-4 font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer font-display"
+                >
+                  <Music className="h-3.5 w-3.5" />
+                  Inserir Àudio Ambient
                 </button>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,9 +17,82 @@ function getYouTubeId(url: string) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+function BackgroundAudio({ src, volume = 0.15 }: { src: string; volume?: number }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(src);
+    audio.loop = true;
+    audioRef.current = audio;
+
+    // Start with volume 0 for fade-in
+    audio.volume = 0;
+    
+    // Play audio
+    audio.play().catch((err) => {
+      console.log("Audio autoplay blocked by browser or failed:", err);
+    });
+
+    // Fade in over 3 seconds (3000ms)
+    // 50ms intervals -> 60 steps
+    let fadeInterval: any;
+    const fadeDuration = 3000;
+    const intervalStep = 50;
+    const steps = fadeDuration / intervalStep; // 60 steps
+    const volumeStep = volume / steps;
+    let currentStep = 0;
+
+    fadeInterval = setInterval(() => {
+      currentStep++;
+      if (audio) {
+        audio.volume = Math.min(volume, currentStep * volumeStep);
+      }
+      if (currentStep >= steps) {
+        clearInterval(fadeInterval);
+      }
+    }, intervalStep);
+
+    return () => {
+      // Cleanup on unmount (Slide change)
+      // Fade out over 3 seconds (3000ms)
+      clearInterval(fadeInterval);
+      let fadeOutInterval: any;
+      const startVolume = audio.volume;
+      const fadeDuration = 3000;
+      const intervalStep = 50;
+      const steps = fadeDuration / intervalStep; // 60 steps
+      const volumeStep = startVolume / steps;
+      let currentOutStep = steps;
+      const targetAudio = audio; // Capture current audio closure
+      
+      fadeOutInterval = setInterval(() => {
+        currentOutStep--;
+        if (targetAudio) {
+          targetAudio.volume = Math.max(0, currentOutStep * volumeStep);
+        }
+        if (currentOutStep <= 0) {
+          clearInterval(fadeOutInterval);
+          if (targetAudio) {
+            targetAudio.pause();
+          }
+        }
+      }, intervalStep);
+    };
+  }, [src, volume]);
+
+  return null; // Invisible element
+}
+
 const customComponents = {
   img: ({ node, src, alt, ...props }: any) => {
     if (!src) return null;
+    
+    const isBgAudio = alt && alt.startsWith("bg-audio");
+    if (isBgAudio) {
+      const parts = alt.split("|");
+      const volume = parseFloat(parts[1]?.trim() || "0.15");
+      return <BackgroundAudio src={src} volume={volume} />;
+    }
     
     const isYouTube = (alt && alt.startsWith("youtube")) || src.includes("youtube.com") || src.includes("youtu.be");
     
