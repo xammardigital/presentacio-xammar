@@ -102,18 +102,33 @@ export const setActivePresentation = mutation({
     }
     */
 
+    let firstSlideId: any = null;
+    let linkedStepId: any = null;
+
+    if (args.id) {
+      const slides = await ctx.db
+        .query("slides")
+        .filter((q) => q.eq(q.field("presentationId"), args.id))
+        .collect();
+      if (slides.length > 0) {
+        slides.sort((a, b) => a.order - b.order);
+        firstSlideId = slides[0]._id;
+        linkedStepId = slides[0].linkedStepId ?? null;
+      }
+    }
+
     const existing = await ctx.db.query("presentationState").first();
     if (existing) {
       await ctx.db.patch(existing._id, {
         activePresentationId: args.id,
-        currentStepId: null,
-        activeSlideId: null,
+        currentStepId: linkedStepId,
+        activeSlideId: firstSlideId,
       });
     } else {
       await ctx.db.insert("presentationState", {
         activePresentationId: args.id,
-        currentStepId: null,
-        activeSlideId: null,
+        currentStepId: linkedStepId,
+        activeSlideId: firstSlideId,
       });
     }
 

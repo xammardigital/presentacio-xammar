@@ -62,6 +62,37 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
     }
   }, [slide]);
 
+  const hasChanges = slide ? (
+    markdown !== slide.markdownContent ||
+    internalTitle !== (slide.internalTitle || "") ||
+    fontScale !== slide.fontScale ||
+    linkedStepId !== (slide.linkedStepId || null) ||
+    autoActivate !== slide.autoActivate
+  ) : false;
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = "Tens canvis sense desar. Segur que vols sortir?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
+
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (hasChanges) {
+      if (confirm("Tens canvis sense desar. Segur que vols sortir sense guardar-los?")) {
+        router.push(`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
+      }
+    } else {
+      router.push(`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
+    }
+  };
+
   const handleSave = async () => {
     if (!adminToken) return;
     setIsSaving(true);
@@ -125,15 +156,23 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   if (!slide) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col bg-background text-foreground animate-in">
       {/* Header */}
       <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
         <div className="flex items-center gap-4">
-          <Link href={`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`} className="rounded-full hover:bg-secondary p-2 transition-colors">
+          <button 
+            onClick={handleBack} 
+            className="rounded-full hover:bg-secondary p-2 transition-colors cursor-pointer"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground w-full max-w-sm">
-            <Link href={`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`} className="hover:text-foreground">Slides</Link>
+            <button 
+              onClick={handleBack} 
+              className="hover:text-foreground cursor-pointer font-medium"
+            >
+              Slides
+            </button>
             <ChevronRight className="h-4 w-4" />
             <input 
               value={internalTitle}
@@ -145,10 +184,19 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
         </div>
         
         <div className="flex items-center gap-3">
+          {hasChanges && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-500 text-xs font-bold font-display animate-pulse select-none">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              Sense desar
+            </div>
+          )}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 font-bold text-white transition-all hover:opacity-90 disabled:opacity-50 font-display"
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 font-bold text-white transition-all hover:opacity-90 disabled:opacity-50 font-display cursor-pointer"
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Guardar

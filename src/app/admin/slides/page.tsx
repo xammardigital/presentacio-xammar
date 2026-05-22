@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-  Smartphone
+  Smartphone,
+  AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -119,6 +120,10 @@ function SlidesAdminPageContent() {
   const presentationState = useQuery(api.presentation.getState);
   const presentationId = searchParams.get("presentationId") || presentationState?.activePresentationId;
 
+  const presentations = useQuery(api.presentations.list) || [];
+  const currentPresentation = presentations.find((p) => p._id === presentationId);
+  const isActiveGlobally = presentationState?.activePresentationId === presentationId;
+
   const slides = useQuery(api.slides.list, presentationId ? { presentationId: presentationId as any } : "skip") || [];
   
   const createSlide = useMutation(api.slides.create);
@@ -126,6 +131,16 @@ function SlidesAdminPageContent() {
   const removeSlide = useMutation(api.slides.remove);
   const setActiveSlide = useMutation(api.slides.setActive);
   const resetPresentation = useMutation(api.presentation.resetPresentation);
+  const setActivePresentation = useMutation(api.presentation.setActivePresentation);
+
+  const handleActivatePresentation = async () => {
+    if (!presentationId || !adminToken) return;
+    try {
+      await setActivePresentation({ id: presentationId as any, adminToken });
+    } catch (error) {
+      alert("Error al projectar la presentació");
+    }
+  };
 
   const [localSlides, setLocalSlides] = useState<any[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -235,8 +250,12 @@ function SlidesAdminPageContent() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold font-display text-secondary-foreground leading-tight">Editor de Diapositives</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1 font-light">Gestiona el contingut de la pantalla gran.</p>
+              <h1 className="text-2xl sm:text-3xl font-bold font-display text-secondary-foreground leading-tight">
+                {currentPresentation ? `Diapositives de "${currentPresentation.title}"` : "Editor de Diapositives"}
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 font-light">
+                Gestiona el contingut de la pantalla gran per a aquesta presentació.
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -297,6 +316,31 @@ function SlidesAdminPageContent() {
             </button>
           </div>
         </header>
+
+        {!isActiveGlobally && currentPresentation && (
+          <motion.div 
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-md"
+          >
+            <div className="flex gap-3 items-start">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-amber-600 dark:text-amber-500 font-display text-sm sm:text-base">Aquesta presentació no està activa</h4>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Estàs editant les diapositives de <strong className="text-foreground">"{currentPresentation.title}"</strong>, però actualment no és la presentació que s'està projectant.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleActivatePresentation}
+              className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 transition-all text-white font-bold text-sm px-4 py-2 font-display cursor-pointer"
+            >
+              <Play className="h-4 w-4 fill-current" />
+              Projectar Ara
+            </button>
+          </motion.div>
+        )}
 
         <section className="space-y-4">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
