@@ -206,6 +206,31 @@ const customComponents = {
   }
 };
 
+const pulseVariants = {
+  animate: {
+    scale: [1, 1.08, 1],
+    rotate: [0, -4, 4, -4, 4, 0],
+    transition: {
+      duration: 2.5,
+      repeat: Infinity,
+      repeatType: "loop" as const,
+      ease: "easeInOut" as const
+    }
+  }
+};
+
+const rippleVariants = {
+  animate: {
+    scale: [1, 1.5],
+    opacity: [0.6, 0],
+    transition: {
+      duration: 2.5,
+      repeat: Infinity,
+      ease: "easeOut" as const
+    }
+  }
+};
+
 export default function PresenterPage() {
   const state = useQuery(api.presentation.getState);
   
@@ -227,6 +252,11 @@ export default function PresenterPage() {
   // Current interactive step active for the audience
   const activeStep = useQuery(api.steps.get, { 
     id: state?.currentStepId ?? null 
+  });
+
+  // Fetch step linked to the currently displayed slide
+  const slideStep = useQuery(api.steps.get, { 
+    id: displaySlide?.linkedStepId ?? null 
   });
   
   const setActiveSlide = useMutation(api.slides.setActive);
@@ -368,6 +398,43 @@ export default function PresenterPage() {
                         </span>
                     </div>
                 ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Poll Indicator in Bottom Left */}
+      <AnimatePresence>
+        {slideStep?.type === "ENCUESTA" && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-10 left-10 z-40 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A365D]/80 px-4 py-3 shadow-2xl backdrop-blur-xl"
+          >
+            {/* Pulsing ring indicator */}
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6B00]/20 text-[#FF6B00]">
+              <motion.div
+                variants={pulseVariants}
+                animate="animate"
+                className="z-10"
+              >
+                <BarChart3 className="h-5 w-5" />
+              </motion.div>
+              {/* Outer Ripple ring */}
+              <motion.div
+                variants={rippleVariants}
+                animate="animate"
+                className="absolute inset-0 rounded-xl bg-[#FF6B00]/40"
+              />
+            </div>
+            
+            <div className="text-left font-display">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] animate-pulse">Enquesta en marxa</span>
+              <p className="max-w-[200px] truncate text-xs font-semibold text-white/90 leading-tight">
+                {slideStep?.title || "S'esperen respostes"}
+              </p>
             </div>
           </motion.div>
         )}
