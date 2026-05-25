@@ -262,9 +262,31 @@ export default function PresenterPage() {
   const setActiveSlide = useMutation(api.slides.setActive);
   const [adminToken, setAdminToken] = useState<string | null>(null);
 
+  // Dynamic scaling calculations to fit screen at 16:9 (1600x900)
+  const [scale, setScale] = useState(1);
+
   useEffect(() => {
-    const token = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
-    setAdminToken(token);
+    const handleResize = () => {
+      const baseWidth = 1600;
+      const baseHeight = 900;
+      const scaleX = window.innerWidth / baseWidth;
+      const scaleY = window.innerHeight / baseHeight;
+      // We want to fit the entire slide canvas inside the viewport boundaries
+      setScale(Math.min(scaleX, scaleY));
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleToken = () => {
+      const token = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
+      setAdminToken(token);
+    };
+    handleToken();
   }, []);
 
   useEffect(() => {
@@ -285,26 +307,26 @@ export default function PresenterPage() {
 
   if (state === undefined || slides === undefined) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#1A365D]">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      <div className="flex h-screen items-center justify-center bg-[#07090E]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#FF6B00]" />
       </div>
     );
   }
 
   if (!state?.activeSlideId || !displaySlide) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-[#1A365D] p-12 text-center text-white">
+      <div className="flex h-screen flex-col items-center justify-center bg-[#07090E] p-12 text-center text-white font-sans">
         <motion.div
-           initial={{ opacity: 0, scale: 0.9 }}
+           initial={{ opacity: 0, scale: 0.95 }}
            animate={{ opacity: 1, scale: 1 }}
            className="space-y-8"
         >
-            <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-white/10 text-[#FF6B00]">
-                <MonitorIcon size={64} />
+            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-3xl bg-white/5 border border-white/10 text-[#FF6B00]">
+                <MonitorIcon size={48} />
             </div>
             <div className="space-y-2">
-                <h1 className="text-5xl font-bold font-display tracking-tight">Xammar Digital</h1>
-                <p className="text-2xl text-white/50 font-light">Esperant que comenci la presentació...</p>
+                <h1 className="text-4xl font-bold font-display tracking-tight text-white">Xammar Digital</h1>
+                <p className="text-xl text-white/40 font-light">Esperant que comenci la presentació...</p>
             </div>
         </motion.div>
       </div>
@@ -313,21 +335,31 @@ export default function PresenterPage() {
 
   const totalVotes = activeStep?.votes?.reduce((a, b) => a + b, 0) || 0;
   const showPollOverlay = activeStep?.type === "ENCUESTA" && totalVotes > 0;
+  
+  // Calculate index of option with the highest votes to highlight the winner
+  const maxVotesIndex = activeStep?.votes ? activeStep.votes.indexOf(Math.max(...activeStep.votes)) : -1;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#1A365D] text-white relative">
+    <div className="h-screen w-screen overflow-hidden bg-[#07090E] text-white relative flex items-center justify-center select-none font-sans">
+      
+      {/* Aspect-ratio constrained Slide Canvas */}
       <AnimatePresence mode="wait">
         <motion.div
           key={displaySlide._id}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="flex h-full w-full flex-col items-center justify-center p-24 text-center"
+          initial={{ opacity: 0, scale: scale * 0.98 }}
+          animate={{ opacity: 1, scale: scale }}
+          exit={{ opacity: 0, scale: scale * 0.98 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            width: "1600px",
+            height: "900px",
+            transformOrigin: "center center",
+          }}
+          className="flex flex-col items-center justify-center p-16 text-center shrink-0 relative"
         >
           <div 
-            style={{ fontSize: `${displaySlide.fontScale * 1.5}rem` }}
-            className="w-[calc(100vw-100px)] max-h-[80vh] overflow-y-auto presenter-markdown"
+            style={{ fontSize: `${displaySlide.fontScale * 1.3}rem` }}
+            className="w-[1400px] max-h-[750px] overflow-y-auto presenter-markdown select-text scrollbar-thin"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={customComponents}>
               {displaySlide.markdownContent}
@@ -336,32 +368,32 @@ export default function PresenterPage() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Poll Overlay Window */}
+      {/* Poll Overlay Window (Rendered cleanly as HUD relative to the main window) */}
       <AnimatePresence>
         {showPollOverlay && (
           <motion.div
-            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.9 }}
-            className="absolute bottom-24 right-10 z-50 w-96 overflow-hidden rounded-3xl border border-white/10 bg-[#1A365D]/80 p-6 shadow-2xl backdrop-blur-xl"
+            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+            className="absolute bottom-16 right-10 z-50 w-96 overflow-hidden rounded-3xl border border-white/10 bg-[#0B0F19]/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#FF6B00]/20 p-2 text-[#FF6B00]">
+                <div className="rounded-xl bg-white/5 border border-white/10 p-2 text-[#FF6B00]">
                   <BarChart3 className="h-5 w-5" />
                 </div>
                 <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Resultats Live</h3>
-                    <p className="line-clamp-1 text-xs font-medium text-white/80">{activeStep?.title}</p>
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40">Resultats Live</h3>
+                    <p className="line-clamp-1 text-xs font-semibold text-white/80">{activeStep?.title}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
+              <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs font-bold text-white/80">
                 <Users className="h-3 w-3" />
                 {totalVotes}
               </div>
             </div>
 
-            <div className="h-48 w-full">
+            <div className="h-44 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={activeStep?.options?.map((opt, i) => ({
@@ -380,24 +412,36 @@ export default function PresenterPage() {
                     tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
                     width={80}
                   />
-                  <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={14}>
-                    {activeStep?.options?.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Bar dataKey="votes" radius={[0, 4, 4, 0]} barSize={12}>
+                    {activeStep?.options?.map((_, index) => {
+                      const isWinner = index === maxVotesIndex && (activeStep?.votes?.[index] ?? 0) > 0;
+                      return (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={isWinner ? "#FF6B00" : "rgba(255, 255, 255, 0.15)"} 
+                        />
+                      );
+                    })}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
             
             <div className="mt-4 flex justify-between gap-2 border-t border-white/5 pt-4">
-                {activeStep?.options?.map((opt, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                        <div className="h-1.5 w-6 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                        <span className="text-[10px] font-bold text-white/40">
-                             {totalVotes > 0 ? Math.round(((activeStep?.votes?.[i] ?? 0) / totalVotes) * 100) : 0}%
-                        </span>
-                    </div>
-                ))}
+                {activeStep?.options?.map((opt, i) => {
+                    const isWinner = i === maxVotesIndex && (activeStep?.votes?.[i] ?? 0) > 0;
+                    return (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                          <div 
+                            className="h-1 w-6 rounded-full transition-colors" 
+                            style={{ backgroundColor: isWinner ? "#FF6B00" : "rgba(255, 255, 255, 0.15)" }} 
+                          />
+                          <span className={`text-[10px] font-bold ${isWinner ? "text-[#FF6B00]" : "text-white/40"}`}>
+                               {totalVotes > 0 ? Math.round(((activeStep?.votes?.[i] ?? 0) / totalVotes) * 100) : 0}%
+                          </span>
+                      </div>
+                    );
+                })}
             </div>
           </motion.div>
         )}
@@ -407,14 +451,14 @@ export default function PresenterPage() {
       <AnimatePresence>
         {slideStep?.type === "ENCUESTA" && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-10 left-10 z-40 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1A365D]/80 px-4 py-3 shadow-2xl backdrop-blur-xl"
+            className="absolute bottom-12 left-10 z-40 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0B0F19]/90 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
           >
             {/* Pulsing ring indicator */}
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF6B00]/20 text-[#FF6B00]">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-[#FF6B00]">
               <motion.div
                 variants={pulseVariants}
                 animate="animate"
@@ -426,13 +470,13 @@ export default function PresenterPage() {
               <motion.div
                 variants={rippleVariants}
                 animate="animate"
-                className="absolute inset-0 rounded-xl bg-[#FF6B00]/40"
+                className="absolute inset-0 rounded-xl bg-[#FF6B00]/20"
               />
             </div>
             
             <div className="text-left font-display">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF6B00] animate-pulse">Enquesta en marxa</span>
-              <p className="max-w-[200px] truncate text-xs font-semibold text-white/90 leading-tight">
+              <p className="max-w-[200px] truncate text-xs font-semibold text-white/80 leading-tight">
                 {slideStep?.title || "S'esperen respostes"}
               </p>
             </div>
@@ -440,15 +484,15 @@ export default function PresenterPage() {
         )}
       </AnimatePresence>
 
-      {/* Brand Watermark */}
-      <div className="absolute top-10 right-10 opacity-30">
-          <h2 className="text-xl font-bold font-display text-white">Xammar Digital</h2>
+      {/* Brand Watermark (Sleek minimalist monochrome top right) */}
+      <div className="absolute top-10 right-10 opacity-20">
+          <h2 className="text-lg font-bold font-display text-white tracking-widest uppercase">Xammar Digital</h2>
       </div>
 
-      {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 h-2 bg-white/5 w-full">
+      {/* Progress Bar (Extremely thin and elegant at the very bottom) */}
+      <div className="absolute bottom-0 left-0 h-1 bg-white/5 w-full">
          <motion.div 
-            className="h-full bg-[#FF6B00] shadow-[0_0_20px_rgba(255,107,0,0.5)]"
+            className="h-full bg-[#FF6B00] shadow-[0_0_12px_rgba(255,107,0,0.4)]"
             initial={false}
             animate={{ 
                 width: `${((slides.findIndex(s => s._id === displaySlide._id) + 1) / (slides.length || 1)) * 100}%` 
@@ -460,110 +504,134 @@ export default function PresenterPage() {
       {/* Admin Control Badge */}
       {adminToken && (
         <div className="absolute bottom-6 right-6 text-xs text-white/30 font-display flex items-center justify-center gap-2 group">
-            <span className="hidden opacity-0 group-hover:block transition-all">Control actiu: Usa les fletxes (← / →) per navegar</span>
-            <div className="h-2 w-2 rounded-full bg-emerald-500/50" />
+            <span className="hidden opacity-0 group-hover:block transition-all text-[10px] uppercase tracking-wider">Control actiu: Fletxes (← / →) per navegar</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00]/60 animate-pulse" />
         </div>
       )}
 
+      {/* Minimalist Premium Slide Styles (Forcing brand typography and strict white & black palette with selective orange accents) */}
       <style jsx global>{`
         .presenter-markdown {
-          line-height: 1.4;
+          line-height: 1.5;
         }
         .presenter-markdown h1 {
           font-family: var(--font-funnel-display);
-          color: #FF6B00;
+          color: #FFFFFF;
           font-weight: 800;
-          font-size: 2em;
-          margin-bottom: 0.4em;
+          font-size: 2.2em;
+          margin-bottom: 0.6em;
           line-height: 1.1;
+          letter-spacing: -0.02em;
         }
         .presenter-markdown h2 {
           font-family: var(--font-funnel-display);
-          color: #FF6B00;
+          color: #FFFFFF;
           font-weight: 700;
-          font-size: 1.9em;
-          margin-bottom: 0.4em;
+          font-size: 2em;
+          margin-bottom: 0.5em;
           line-height: 1.15;
+          letter-spacing: -0.01em;
         }
         .presenter-markdown h3 {
           font-family: var(--font-funnel-display);
-          color: #FF6B00;
+          color: #FFFFFF;
           font-weight: 600;
           font-size: 1.8em;
-          margin-bottom: 0.3em;
+          margin-bottom: 0.4em;
           line-height: 1.2;
         }
-        .presenter-markdown h4 {
-          font-family: var(--font-funnel-display);
-          color: #FF6B00;
-          font-weight: 600;
-          font-size: 1.6em;
-          margin-bottom: 0.3em;
-        }
-        .presenter-markdown h5 {
-          font-family: var(--font-funnel-display);
-          color: #FF6B00;
-          font-weight: 600;
-          font-size: 1.6em;
-          margin-bottom: 0.3em;
-        }
+        .presenter-markdown h4, 
+        .presenter-markdown h5, 
         .presenter-markdown h6 {
           font-family: var(--font-funnel-display);
-          color: #FF6B00;
+          color: rgba(255, 255, 255, 0.9);
           font-weight: 600;
           font-size: 1.5em;
-          margin-bottom: 0.3em;
+          margin-bottom: 0.4em;
         }
         .presenter-markdown p {
-          margin-bottom: 0.8em;
-          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 1em;
+          color: rgba(255, 255, 255, 0.85);
+          font-family: var(--font-funnel-sans);
+          line-height: 1.6;
         }
         .presenter-markdown strong {
-          color: #FF6B00;
+          color: #FF6B00; /* Orange restricted key accent */
           font-weight: 700;
+        }
+        .presenter-markdown code {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.85em;
+          color: #FF6B00; /* Muted orange on inline code elements */
+          font-family: var(--font-mono);
+        }
+        .presenter-markdown pre {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 1.25rem;
+          border-radius: 0.75rem;
+          margin: 1.5rem 0;
+          text-align: left;
+          overflow-x: auto;
+        }
+        .presenter-markdown pre code {
+          background: transparent;
+          border: none;
+          padding: 0;
+          color: rgba(255, 255, 255, 0.9);
         }
         .presenter-markdown ul {
           display: block;
           width: fit-content;
-          margin: 0.8em auto;
+          margin: 1.2em auto;
           text-align: left;
           list-style-type: disc;
-          padding-left: 1.5em;
+          padding-left: 2em;
         }
         .presenter-markdown ol {
           display: block;
           width: fit-content;
-          margin: 0.8em auto;
+          margin: 1.2em auto;
           text-align: left;
           list-style-type: decimal;
-          padding-left: 1.5em;
+          padding-left: 2em;
         }
         .presenter-markdown li {
-          margin-bottom: 0.4em;
-          padding-left: 0.25em;
+          margin-bottom: 0.6em;
+          padding-left: 0.5em;
+          color: rgba(255, 255, 255, 0.85);
+          font-family: var(--font-funnel-sans);
         }
         .presenter-markdown li::marker {
-          color: #FF6B00;
+          color: #FF6B00; /* Restricted orange brand marker */
           font-weight: bold;
         }
         .presenter-markdown img {
-          max-width: 90%;
-          max-height: 50vh;
-          margin: 1.5em auto;
+          max-width: 85%;
+          max-height: 480px;
+          margin: 2em auto;
           display: block;
-          border-radius: 1rem;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+          border-radius: 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 30px 60px rgba(0,0,0,0.5);
           object-fit: contain;
+          background: rgba(255, 255, 255, 0.02);
         }
-        .presenter-markdown::-webkit-scrollbar {
-          width: 6px;
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 5px;
         }
-        .presenter-markdown::-webkit-scrollbar-track {
+        .scrollbar-thin::-webkit-scrollbar-track {
           background: transparent;
         }
-        .presenter-markdown::-webkit-scrollbar-thumb {
-          background: rgba(255, 107, 0, 0.3);
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
           border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 107, 0, 0.3);
         }
       `}</style>
     </div>
