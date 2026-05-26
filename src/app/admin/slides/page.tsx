@@ -15,7 +15,8 @@ import {
   ChevronRight,
   RotateCcw,
   Smartphone,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -299,6 +300,33 @@ function SlidesAdminPageContent() {
                 <Smartphone className="h-4 w-4" />
                 <span className="hidden sm:inline">Comandament</span>
             </Link>
+            <button 
+                onClick={() => {
+                  if (localSlides.length === 0) {
+                    alert("No hi ha diapositives per exportar.");
+                    return;
+                  }
+                  const title = currentPresentation?.title || "presentacio";
+                  const fullMarkdownContent = localSlides
+                    .map((slide) => slide.markdownContent)
+                    .join("\n\n---\n\n");
+                  
+                  const blob = new Blob([fullMarkdownContent], { type: "text/markdown;charset=utf-8;" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  const fileName = `${title.toLowerCase().replace(/\s+/g, "-")}.md`;
+                  link.setAttribute("download", fileName);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary/50 px-4 py-2 text-sm font-bold text-foreground hover:bg-secondary transition-all font-display cursor-pointer"
+                title="Exportar totes les diapositives a un sol fitxer Markdown"
+            >
+                <Download className="h-4 w-4" />
+                <span>Exportar MD</span>
+            </button>
             <button 
                 onClick={() => window.open("/presenter", "_blank")}
                 className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-all font-display"
