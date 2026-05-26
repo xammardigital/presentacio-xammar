@@ -513,6 +513,8 @@ export default function PresenterPage() {
       <style jsx global>{`
         .presenter-markdown {
           line-height: 1.5;
+          max-width: 100%;
+          overflow-x: hidden;
         }
         .presenter-markdown h1 {
           font-family: var(--font-funnel-display);
@@ -576,6 +578,9 @@ export default function PresenterPage() {
           margin: 1.5rem 0;
           text-align: left;
           overflow-x: auto;
+          max-width: 100%;
+          width: 100%;
+          box-sizing: border-box;
         }
         .presenter-markdown pre code {
           background: transparent;
