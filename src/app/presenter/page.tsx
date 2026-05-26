@@ -515,6 +515,8 @@ export default function PresenterPage() {
           line-height: 1.5;
           max-width: 100%;
           overflow-x: hidden;
+          word-break: break-word;
+          overflow-wrap: break-word;
         }
         .presenter-markdown h1 {
           font-family: var(--font-funnel-display);
@@ -569,6 +571,10 @@ export default function PresenterPage() {
           font-size: 0.85em;
           color: #FF6B00; /* Muted orange on inline code elements */
           font-family: var(--font-mono);
+          white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          max-width: 100%;
         }
         .presenter-markdown pre {
           background: rgba(0, 0, 0, 0.3);
@@ -577,16 +583,23 @@ export default function PresenterPage() {
           border-radius: 0.75rem;
           margin: 1.5rem 0;
           text-align: left;
-          overflow-x: auto;
           max-width: 100%;
           width: 100%;
           box-sizing: border-box;
+          white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          overflow-x: hidden;
         }
         .presenter-markdown pre code {
           background: transparent;
           border: none;
           padding: 0;
           color: rgba(255, 255, 255, 0.9);
+          white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          display: block;
         }
         .presenter-markdown ul {
           display: block;
