@@ -66,17 +66,22 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentation
         <div {...attributes} {...listeners} className="cursor-grab hover:text-foreground text-muted-foreground touch-none">
           <GripVertical className="h-5 w-5" />
         </div>
-        <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-secondary/50 border border-border overflow-hidden text-[6px] p-2 leading-tight text-muted-foreground select-none">
-            {slide.markdownContent.substring(0, 80)}...
-        </div>
-        <div className="flex-1">
-          <h3 className="font-medium line-clamp-1">
-            {slide.internalTitle || slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            Escala: {slide.fontScale}x • {slide.linkedStepId ? "Vinculada" : "Sin interactividad"}
-          </p>
-        </div>
+        <Link
+          href={`/admin/slides/${slide._id}?presentationId=${presentationId || ""}`}
+          className="flex flex-1 items-center gap-4 hover:opacity-80 transition-all w-full sm:w-auto cursor-pointer"
+        >
+          <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-secondary/50 border border-border overflow-hidden text-[6px] p-2 leading-tight text-muted-foreground select-none">
+              {slide.markdownContent.substring(0, 80)}...
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium line-clamp-1 text-foreground">
+              {slide.internalTitle || slide.markdownContent.split('\n')[0].replace('#', '').trim() || "Diapositiva sin título"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Escala: {slide.fontScale}x • {slide.linkedStepId ? "Vinculada" : "Sin interactividad"}
+            </p>
+          </div>
+        </Link>
       </div>
 
       <div className="flex items-center gap-2 w-full sm:w-auto self-end sm:self-auto">
@@ -119,7 +124,7 @@ function SlidesAdminPageContent() {
 
   const searchParams = useSearchParams();
   const presentationState = useQuery(api.presentation.getState);
-  const presentationId = searchParams.get("presentationId") || presentationState?.activePresentationId;
+  const presentationId = searchParams?.get("presentationId") || presentationState?.activePresentationId;
 
   const presentations = useQuery(api.presentations.list) || [];
   const currentPresentation = presentations.find((p) => p._id === presentationId);

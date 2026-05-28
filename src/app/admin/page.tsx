@@ -160,7 +160,7 @@ function AdminPageContent() {
     setIsMounted(true);
 
     // Dynamic selection via URL parameter
-    const pId = searchParams.get("presentationId");
+    const pId = searchParams?.get("presentationId");
     if (pId) {
       setSelectedPresentationId(pId);
     }
