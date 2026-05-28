@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
 
     // 1. Check if the room exists on Daily.co
     let roomExists = false;
+    let roomData: any = null;
+    
     const roomCheckResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
       method: "GET",
       headers: {
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (roomCheckResponse.ok) {
       roomExists = true;
+      roomData = await roomCheckResponse.json();
     }
 
     // 2. If it doesn't exist, create it
@@ -63,6 +66,7 @@ export async function POST(req: NextRequest) {
           { status: 500 }
         );
       }
+      roomData = await roomCreateResponse.json();
     }
 
     // 3. Generate a Meeting Token with appropriate permissions based on role
@@ -74,11 +78,6 @@ export async function POST(req: NextRequest) {
       room_name: roomName,
       is_owner: isOwner,
       user_name: isOwner ? "Presentador (Admin)" : (viewerName || "Espectador"),
-      // Owners and interactive speakers can publish, standard viewers cannot
-      publish: {
-        video: isOwner || isInteractiveViewer ? "allowed" : "not-allowed",
-        audio: isInteractiveViewer ? "allowed" : (isOwner ? "allowed" : "not-allowed"),
-      },
       // Silence everyone initially to avoid microphone noise or echo issues
       start_video_off: !isOwner && !isInteractiveViewer,
       start_audio_off: true,
@@ -113,7 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       token: tokenData.token,
-      roomUrl: `https://api.daily.co/${roomName}`,
+      roomUrl: roomData?.url || `https://api.daily.co/${roomName}`,
       roomName: roomName,
     });
   } catch (error: any) {
