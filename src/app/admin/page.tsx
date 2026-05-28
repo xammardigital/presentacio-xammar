@@ -678,12 +678,14 @@ function AdminPageContent() {
                             Editar Pasos
                           </button>
 
-                          <Link
-                            href={`/admin/slides?presentationId=${p._id}`}
-                            className="flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-all font-display"
+                          <button
+                            onClick={() => {
+                              router.push(`/admin/slides?presentationId=${p._id}`);
+                            }}
+                            className="flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-all font-display cursor-pointer"
                           >
                             Editar Slides
-                          </Link>
+                          </button>
 
                           {!isEditing && (
                             <button
@@ -772,13 +774,15 @@ function AdminPageContent() {
               </button>
             )}
             
-            <Link
-              href={`/admin/slides?presentationId=${selectedPresentationId}`}
-              className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/15 transition-all font-display"
-            >
-              <Monitor className="h-3.5 w-3.5" />
-              Editor Slides
-            </Link>
+            <button
+               onClick={() => {
+                 router.push(`/admin/slides?presentationId=${selectedPresentationId}`);
+               }}
+               className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/15 transition-all font-display cursor-pointer"
+             >
+               <Monitor className="h-3.5 w-3.5" />
+               Editor Slides
+             </button>
 
             <Link
               href="/admin/remote"
