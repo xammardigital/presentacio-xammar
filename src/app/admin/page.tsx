@@ -1116,7 +1116,7 @@ function AdminPageContent() {
                   {/* Active Speaker Banner */}
                   {presentationState?.activeSpeakerId ? (
                     (() => {
-                      const activeItem = qnaQueue.find(q => q.viewerId === presentationState.activeSpeakerId && q.status === "SPEAKING");
+                      const activeItem = Array.isArray(qnaQueue) ? qnaQueue.find(q => q.viewerId === presentationState.activeSpeakerId && q.status === "SPEAKING") : null;
                       return (
                         <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between animate-pulse">
                           <div className="flex items-center gap-2 text-xs">
@@ -1142,7 +1142,7 @@ function AdminPageContent() {
                   <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cola de espera</p>
                     
-                    {qnaQueue.filter(q => q.status === "PENDING").map((item) => (
+                    {(Array.isArray(qnaQueue) ? qnaQueue : []).filter(q => q.status === "PENDING").map((item) => (
                       <div key={item._id} className="flex items-center justify-between bg-card border border-border/80 p-3 rounded-2xl hover:bg-secondary/40 transition-colors">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
@@ -1169,7 +1169,7 @@ function AdminPageContent() {
                       </div>
                     ))}
 
-                    {qnaQueue.filter(q => q.status === "PENDING").length === 0 && (
+                    {(Array.isArray(qnaQueue) ? qnaQueue : []).filter(q => q.status === "PENDING").length === 0 && (
                       <div className="text-center py-6 text-muted-foreground/60 text-xs font-light bg-secondary/10 rounded-2xl border border-dashed border-border/60">
                         Esperando que alguien levante la mano desde el móvil...
                       </div>
@@ -1280,15 +1280,15 @@ function AdminPageContent() {
             <h2 className="flex items-center justify-between text-xl font-bold font-display text-secondary-foreground">
               <span>Llista de passos</span>
               <span className="text-xs font-normal text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-                {localSteps.length} passos · arrossega per ordenar
+                {(localSteps || []).length} passos · arrossega per ordenar
               </span>
             </h2>
             
             <div className="space-y-3">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                <SortableContext items={localSteps.map((s: any) => s._id)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={(localSteps || []).map((s: any) => s?._id).filter(Boolean)} strategy={verticalListSortingStrategy}>
                   <AnimatePresence>
-                    {localSteps.map((step: any) => (
+                    {(localSteps || []).map((step: any) => step && (
                       <motion.div
                         key={step._id}
                         initial={{ opacity: 0, y: -8 }}
@@ -1307,7 +1307,7 @@ function AdminPageContent() {
                 </SortableContext>
               </DndContext>
 
-              {localSteps.length === 0 && (
+              {(localSteps || []).length === 0 && (
                 <div className="text-center py-20 rounded-3xl border-2 border-dashed border-border bg-card/10">
                   <p className="text-muted-foreground font-light">No hi ha cap pas interactiu encara. Comença per crear el primer a l'esquerra.</p>
                 </div>
@@ -1315,7 +1315,7 @@ function AdminPageContent() {
             </div>
 
             {/* Live Results Panel */}
-            {isSelectedActiveGlobally && activeStep?.type === "ENCUESTA" && activeStep.options && activeStep.votes && (
+            {isSelectedActiveGlobally && activeStep?.type === "ENCUESTA" && Array.isArray(activeStep.options) && Array.isArray(activeStep.votes) && (
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1336,7 +1336,7 @@ function AdminPageContent() {
                     <BarChart
                       data={activeStep.options.map((opt: string, i: number) => ({
                         name: opt,
-                        votes: activeStep.votes![i],
+                        votes: activeStep.votes?.[i] ?? 0,
                       }))}
                       layout="vertical"
                       margin={{ left: 10, right: 30 }}
@@ -1366,7 +1366,7 @@ function AdminPageContent() {
                   {activeStep.options.map((opt: string, i: number) => (
                     <div key={i} className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-xl border border-border/40">
                       <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-xs font-semibold text-muted-foreground">{activeStep.votes![i]} vots</span>
+                      <span className="text-xs font-semibold text-muted-foreground">{(activeStep.votes?.[i] ?? 0)} vots</span>
                     </div>
                   ))}
                 </div>
