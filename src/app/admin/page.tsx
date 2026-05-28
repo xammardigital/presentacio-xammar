@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { 
   Plus, 
   Trash2, 
@@ -156,13 +156,22 @@ function AdminPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const hasReadInitialParams = useRef(false);
+
   useEffect(() => {
     setIsMounted(true);
+  }, []);
 
-    // Dynamic selection via URL parameter
-    const pId = searchParams?.get("presentationId");
-    if (pId) {
-      setSelectedPresentationId(pId);
+  useEffect(() => {
+    // Only read presentationId from URL on the very first render.
+    // Subsequent searchParams changes (e.g. from router.push to /admin/slides)
+    // must NOT trigger this, or navigation gets cancelled.
+    if (!hasReadInitialParams.current) {
+      hasReadInitialParams.current = true;
+      const pId = searchParams?.get("presentationId");
+      if (pId) {
+        setSelectedPresentationId(pId);
+      }
     }
   }, [searchParams]);
 
