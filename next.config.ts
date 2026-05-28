@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value: "camera=(self \"https://*.daily.co\"), microphone=(self \"https://*.daily.co\"), geolocation=()",
           },
         ],
       },
