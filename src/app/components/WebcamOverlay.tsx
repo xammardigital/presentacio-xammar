@@ -67,30 +67,11 @@ export default function WebcamOverlay({
         setError(null);
         setMissingApiKey(false);
 
-        // 1. Solicitar Token a nuestro backend
-        const res = await fetch("/api/video/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            presentationId,
-            role: "viewer", // Rol espectador pasivo
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          if (data.missingApiKey) {
-            setMissingApiKey(true);
-            return;
-          }
-          throw new Error(data.error || "Error al obtener credenciales de vídeo");
-        }
+        const roomUrl = "https://xammardigital.daily.co/4XvgrpD8t4sYDCqH4861";
 
         if (!isSubscribed) return;
 
-        setToken(data.token);
-        setRoomUrl(data.roomUrl);
+        setRoomUrl(roomUrl);
 
         // 2. Importar dinámicamente @daily-co/daily-js para evitar problemas de SSR en Next.js
         const DailyIframe = (await import("@daily-co/daily-js")).default;
@@ -132,8 +113,7 @@ export default function WebcamOverlay({
 
         // 4. Unirse a la reunión
         await localCallObject.join({
-          url: data.roomUrl,
-          token: data.token,
+          url: roomUrl,
         });
 
       } catch (err: any) {
