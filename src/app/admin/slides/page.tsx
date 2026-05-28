@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Smartphone,
   AlertTriangle,
-  Download
+  Download,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -245,6 +246,88 @@ function SlidesAdminPageContent() {
     }
   };
 
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImportMarkdown = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !presentationId) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        if (!text) {
+          alert("El fitxer està buit.");
+          setIsImporting(false);
+          return;
+        }
+
+        // Split slides using the standard MD three dashes separator (---) in a single line
+        const rawSlides = text.split(/\r?\n---\r?\n/g);
+        const parsedSlides = rawSlides
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+
+        if (parsedSlides.length === 0) {
+          alert("No s'ha trobat cap diapositiva vàlida. Assegura't de separar-les amb '---' en una línia sola.");
+          setIsImporting(false);
+          return;
+        }
+
+        // Ask the user if they want to append or replace
+        const replaceMode = confirm(
+          `S'han detectat ${parsedSlides.length} diapositives.\n\n` +
+          `• Clic a ACEPTAR per REEMPLAÇAR totes les diapositives actuals.\n` +
+          `• Clic a CANCELAR per AFEGIR-LES al final de les actuals.`
+        );
+
+        if (replaceMode) {
+          // Replace mode: delete all existing slides first
+          for (const slide of slides) {
+            await removeSlide({ id: slide._id, adminToken: adminToken || "" });
+          }
+        }
+
+        // Create new slides sequentially to preserve correct ordering
+        for (let i = 0; i < parsedSlides.length; i++) {
+          const content = parsedSlides[i];
+          
+          // Try to extract the first header (# Title) as the internal title
+          const titleMatch = content.match(/^#+\s+(.+)$/m);
+          const internalTitle = titleMatch ? titleMatch[1].trim() : `Diapositiva ${i + 1}`;
+
+          await createSlide({
+            presentationId: presentationId as any,
+            internalTitle,
+            markdownContent: content,
+            fontScale: 1.0,
+            linkedStepId: null,
+            autoActivate: false,
+            adminToken: adminToken || "",
+          });
+        }
+
+        alert(`🎉 ¡Importació completada amb èxit! S'han importat ${parsedSlides.length} diapositives.`);
+      } catch (err: any) {
+        console.error("Error importing markdown:", err);
+        alert("Error al importar: " + (err.message || "Error desconegut"));
+      } finally {
+        setIsImporting(false);
+        // Clear input value so same file can be selected again
+        event.target.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      alert("Error al llegir el fitxer.");
+      setIsImporting(false);
+    };
+
+    reader.readAsText(file);
+  };
+
   if (!isMounted) return null;
 
   return (
@@ -332,6 +415,22 @@ function SlidesAdminPageContent() {
                 <Download className="h-4 w-4" />
                 <span>Exportar MD</span>
             </button>
+
+            <label 
+                className={`flex items-center gap-2 rounded-xl border border-secondary bg-secondary/50 px-4 py-2 text-sm font-bold text-foreground hover:bg-secondary transition-all font-display cursor-pointer ${isImporting ? "opacity-50 cursor-not-allowed" : ""}`}
+                title="Importar fitxer Markdown per generar diapositives automàticament"
+            >
+                <Upload className="h-4 w-4" />
+                <span>{isImporting ? "Important..." : "Importar MD"}</span>
+                <input 
+                  type="file" 
+                  accept=".md" 
+                  onChange={handleImportMarkdown} 
+                  className="hidden" 
+                  disabled={isImporting} 
+                />
+            </label>
+
             <button 
                 onClick={() => window.open("/presenter", "_blank")}
                 className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-all font-display"
