@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,7 +84,69 @@ function BackgroundAudio({ src, volume = 0.15 }: { src: string; volume?: number 
   return null; // Invisible element
 }
 
+// --- Copy Button for code blocks ---
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [text]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="copy-btn absolute top-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all duration-200"
+      style={{
+        background: copied ? "rgba(74, 222, 128, 0.15)" : "rgba(255,255,255,0.07)",
+        border: copied ? "1px solid rgba(74, 222, 128, 0.3)" : "1px solid rgba(255,255,255,0.1)",
+        color: copied ? "#4ade80" : "rgba(255,255,255,0.5)",
+      }}
+      title="Copiar codi"
+    >
+      {copied ? (
+        <><Check className="h-3 w-3" /> Copiat!</>
+      ) : (
+        <><Copy className="h-3 w-3" /> Copiar</>
+      )}
+    </button>
+  );
+}
+
+// --- Custom pre block wrapper with copy button ---
+function PreWithCopy({ children }: { children: React.ReactNode }) {
+  const preRef = useRef<HTMLPreElement>(null);
+  const [codeText, setCodeText] = useState("");
+
+  useEffect(() => {
+    if (preRef.current) {
+      setCodeText(preRef.current.textContent || "");
+    }
+  }, [children]);
+
+  return (
+    <div className="relative group/codeblock">
+      <pre ref={preRef}>{children}</pre>
+      {codeText && <CopyButton text={codeText} />}
+    </div>
+  );
+}
+
 const customComponents = {
+  pre: ({ children }: any) => <PreWithCopy>{children}</PreWithCopy>,
   img: ({ node, src, alt, ...props }: any) => {
     if (!src) return null;
     
@@ -580,6 +643,7 @@ export default function PresenterPage() {
           background: rgba(0, 0, 0, 0.3);
           border: 1px solid rgba(255, 255, 255, 0.05);
           padding: 1.25rem;
+          padding-top: 2.5rem; /* extra top space for the copy button */
           border-radius: 0.75rem;
           margin: 1.5rem 0;
           text-align: left;
@@ -590,6 +654,14 @@ export default function PresenterPage() {
           word-break: break-word;
           overflow-wrap: break-word;
           overflow-x: hidden;
+          position: relative;
+        }
+        .copy-btn {
+          opacity: 0.7;
+          transition: opacity 0.2s;
+        }
+        .copy-btn:hover {
+          opacity: 1;
         }
         .presenter-markdown pre code {
           background: transparent;
