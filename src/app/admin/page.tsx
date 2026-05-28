@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Loader2,
   AlertTriangle,
+  Camera,
   Video,
   VideoOff,
   MessageSquare,
