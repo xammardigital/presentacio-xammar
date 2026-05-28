@@ -278,7 +278,7 @@ export const updateQnaStatus = mutation({
             q.and(
               q.eq(q.field("presentationId"), request.presentationId),
               q.eq(q.field("status"), "SPEAKING"),
-              q.neq(q._id, args.requestId)
+              q.neq(q.field("_id"), args.requestId)
             )
           )
           .collect();
