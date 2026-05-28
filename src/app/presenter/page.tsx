@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import { Loader2, Monitor as MonitorIcon, BarChart3, Users } from "lucide-react";
+import WebcamOverlay from "../components/WebcamOverlay";
 
 const COLORS = ["#FF6B00", "#4299E1", "#48BB78", "#F6AD55"];
 
@@ -570,6 +571,15 @@ export default function PresenterPage() {
             <span className="hidden opacity-0 group-hover:block transition-all text-[10px] uppercase tracking-wider">Control actiu: Fletxes (← / →) per navegar</span>
             <div className="h-1.5 w-1.5 rounded-full bg-[#FF6B00]/60 animate-pulse" />
         </div>
+      )}
+
+      {/* Webcam overlay */}
+      {state && state.activePresentationId && (
+        <WebcamOverlay
+          presentationId={state.activePresentationId}
+          webcamActive={state.webcamActive ?? false}
+          activeSpeakerId={state.activeSpeakerId ?? null}
+        />
       )}
 
       {/* Minimalist Premium Slide Styles (Forcing brand typography and strict white & black palette with selective orange accents) */}

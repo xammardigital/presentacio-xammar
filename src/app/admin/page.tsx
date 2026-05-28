@@ -24,7 +24,14 @@ import {
   ArrowLeft, 
   ExternalLink,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Video,
+  VideoOff,
+  MessageSquare,
+  UserCheck,
+  Radio,
+  Mic,
+  X
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
@@ -233,6 +240,146 @@ function AdminPageContent() {
   const createStepMutation = useMutation(api.steps.create);
   const removeStepMutation = useMutation(api.steps.remove);
   const reorderStepsMutation = useMutation(api.steps.reorder);
+
+  // Live Video & Q&A Mutations
+  const setWebcamActiveMutation = useMutation(api.presentation.setWebcamActive);
+  const setQnaEnabledMutation = useMutation(api.presentation.setQnaEnabled);
+  const updateQnaStatusMutation = useMutation(api.presentation.updateQnaStatus);
+  const qnaQueue = useQuery(
+    api.presentation.getQnaQueue, 
+    selectedPresentationId ? { presentationId: selectedPresentationId as any } : "skip"
+  ) || [];
+
+  // Live Webcam Admin states
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isAdminCallActive, setIsAdminCallActive] = useState(false);
+  const [adminCallObject, setAdminCallObject] = useState<any>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [missingAdminApiKey, setMissingAdminApiKey] = useState(false);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Toggle admin webcam broadcast
+  const handleToggleWebcam = async () => {
+    if (!adminToken || !selectedPresentationId) return;
+
+    const currentWebcamActive = presentationState?.webcamActive ?? false;
+
+    if (currentWebcamActive) {
+      // 1. Turn off
+      if (adminCallObject) {
+        try {
+          await adminCallObject.leave();
+          adminCallObject.destroy();
+        } catch (e) {
+          console.error("Error leaving Daily room:", e);
+        }
+        setAdminCallObject(null);
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        setLocalStream(null);
+      }
+      setIsAdminCallActive(false);
+      await setWebcamActiveMutation({ active: false, adminToken });
+    } else {
+      // 2. Turn on
+      try {
+        setVideoError(null);
+        setMissingAdminApiKey(false);
+
+        // Fetch token from our Next API Route
+        const res = await fetch("/api/video/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            presentationId: selectedPresentationId,
+            role: "admin",
+          }),
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok || !data.success) {
+          if (data.missingApiKey) {
+            setMissingAdminApiKey(true);
+            // Allow simulated camera if key is missing so the user can test the UI!
+            if (confirm("⚠️ Clave API de Daily.co no configurada. ¿Quieres simular la transmisión para probar la interfaz (ventanita flotante) en la pantalla de presentación?")) {
+              await setWebcamActiveMutation({ active: true, adminToken });
+            }
+            return;
+          }
+          throw new Error(data.error || "No se ha podido obtener el token de vídeo");
+        }
+
+        // Dynamically import @daily-co/daily-js to keep server-side rendering happy
+        const DailyIframe = (await import("@daily-co/daily-js")).default;
+
+        // Ask for camera permission locally
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false, // video only as requested
+        });
+        
+        setLocalStream(stream);
+
+        const call = DailyIframe.createCallObject({
+          subscribeToTracksAutomatically: true,
+          dailyConfig: {
+            useDevicePreferenceCookies: false,
+          },
+        });
+
+        setAdminCallObject(call);
+
+        call.on("joined-meeting", () => {
+          setIsAdminCallActive(true);
+        });
+
+        call.on("error", (e: any) => {
+          console.error("Daily Admin Error:", e);
+          setVideoError("Error en la conexión de vídeo en directo");
+        });
+
+        await call.join({
+          url: data.roomUrl,
+          token: data.token,
+        });
+
+        // Set video camera on in the conference
+        await call.setLocalVideo(true);
+        await call.setLocalAudio(false); // Make absolutely sure audio is off
+
+        await setWebcamActiveMutation({ active: true, adminToken });
+      } catch (err: any) {
+        console.error("Error starting camera:", err);
+        setVideoError(err.message || "No se ha podido acceder a tu cámara web.");
+        
+        // Fallback simulation
+        if (confirm("No se ha podido acceder a la cámara o inicializar el servicio. ¿Quieres simular la transmisión para probar la interfaz?")) {
+          await setWebcamActiveMutation({ active: true, adminToken });
+        }
+      }
+    }
+  };
+
+  // Clean up media streams on unmount
+  useEffect(() => {
+    return () => {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+      if (adminCallObject) {
+        adminCallObject.leave().then(() => adminCallObject.destroy()).catch(e => console.log(e));
+      }
+    };
+  }, [localStream, adminCallObject]);
+
+  // Keep local video element synced with localStream
+  useEffect(() => {
+    if (localStream && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
 
   // Form states for creating a new step
   const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
@@ -817,6 +964,222 @@ function AdminPageContent() {
             </div>
           </div>
         )}
+
+        {/* --- LIVE WEBCAM & INTERACTIVE Q&A CONTROL PANEL --- */}
+        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8 glass shadow-md space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 gap-4">
+            <div>
+              <h2 className="text-xl font-bold font-display text-secondary-foreground flex items-center gap-2">
+                <Radio className="h-5 w-5 text-emerald-500 animate-pulse" />
+                Control de Vídeo e Interacción en Directo
+              </h2>
+              <p className="text-xs text-muted-foreground font-light mt-1">Transmite tu webcam en directo y gestiona las preguntas de vídeo de los espectadores.</p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full border uppercase ${
+                presentationState?.webcamActive 
+                  ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-500 animate-pulse" 
+                  : "bg-secondary border-border text-muted-foreground"
+              }`}>
+                {presentationState?.webcamActive ? "Cámara Activa" : "Cámara Apagada"}
+              </span>
+              <span className={`text-[10px] font-bold px-3 py-1 rounded-full border uppercase ${
+                presentationState?.qnaEnabled 
+                  ? "bg-indigo-500/10 border-indigo-500/25 text-indigo-500" 
+                  : "bg-secondary border-border text-muted-foreground"
+              }`}>
+                {presentationState?.qnaEnabled ? "Preguntas Activas" : "Preguntas Desactivadas"}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            
+            {/* COLUMN 1: WEBCAM BROADCAST */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Video className="h-4.5 w-4.5 text-primary" />
+                  Transmisión de Webcam
+                </h3>
+              </div>
+
+              {/* API KEY WARNING */}
+              {missingAdminApiKey && (
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs text-amber-600 dark:text-amber-400 space-y-1">
+                  <p className="font-semibold flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    DAILY_API_KEY no configurada
+                  </p>
+                  <p className="font-light leading-relaxed">
+                    Para habilitar la transmisión de vídeo WebRTC real, debes registrarte en <strong>Daily Video</strong> y configurar tu clave de API en tu entorno.
+                  </p>
+                </div>
+              )}
+
+              {videoError && (
+                <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl">
+                  ⚠️ {videoError}
+                </p>
+              )}
+
+              {/* VIDEO PREVIEW OR CAMERA ON/OFF ILLUSTRATION */}
+              <div className="aspect-video w-full rounded-2xl bg-zinc-950 border border-border/40 relative overflow-hidden flex flex-col items-center justify-center">
+                {presentationState?.webcamActive ? (
+                  <>
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover scale-x-[-1] absolute inset-0 z-0"
+                    />
+                    {!localStream && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 z-10 text-center p-4">
+                        <Camera className="w-8 h-8 text-amber-500 mb-2 animate-bounce" />
+                        <p className="text-xs font-semibold text-white/95">Transmisión simulada activa</p>
+                        <p className="text-[10px] text-white/40 mt-1">
+                          Mostrando simulación en el projector por falta de cámara o API Key.
+                        </p>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-emerald-500 flex items-center gap-1.5 z-10 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                      EMITIENDO EN DIRECTO
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-6 space-y-3">
+                    <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center mx-auto border border-border/50 text-muted-foreground/60">
+                      <VideoOff className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Tu cámara está apagada</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">La audiencia no te verá en el proyector.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleWebcam}
+                className={`w-full rounded-2xl py-3.5 px-4 font-bold text-xs font-display flex items-center justify-center gap-2 border transition-all ${
+                  presentationState?.webcamActive
+                    ? "bg-rose-500 border-rose-600 text-white hover:bg-rose-600 shadow-md shadow-rose-500/10"
+                    : "bg-primary border-primary hover:opacity-95 text-white shadow-md shadow-primary/10"
+                }`}
+              >
+                <Video className="w-4 h-4" />
+                {presentationState?.webcamActive ? "DESACTIVAR WEBCAM" : "ACTIVAR WEBCAM EN DIRECTO"}
+              </button>
+            </div>
+
+            {/* COLUMN 2: AUDIENCE INTERACTIVE Q&A */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <MessageSquare className="h-4.5 w-4.5 text-primary" />
+                  Turno de Preguntas (Q&A)
+                </h3>
+                
+                <button
+                  onClick={() => setQnaEnabledMutation({ enabled: !(presentationState?.qnaEnabled ?? false), adminToken: adminToken || "" })}
+                  className={`rounded-xl px-3 py-1.5 text-[10px] font-bold font-display border transition-all ${
+                    presentationState?.qnaEnabled 
+                      ? "bg-indigo-500 text-white border-indigo-600 hover:bg-indigo-600" 
+                      : "bg-card border-border text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {presentationState?.qnaEnabled ? "Desactivar Q&A" : "Activar Q&A"}
+                </button>
+              </div>
+
+              {/* Q&A DISABLED SCREEN */}
+              {!presentationState?.qnaEnabled ? (
+                <div className="bg-secondary/20 border border-border/50 rounded-2xl p-6 text-center py-10 space-y-3">
+                  <div className="w-12 h-12 bg-secondary/80 rounded-full flex items-center justify-center mx-auto text-muted-foreground/60">
+                    <Mic className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground">Preguntas desactivadas</p>
+                    <p className="text-[10px] text-muted-foreground/60 max-w-[280px] mx-auto mt-0.5 leading-relaxed">
+                      Activa el modo Q&A para permitir que el público móvil pida hablar, proyectando su micro y cámara en la pantalla grande.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* Q&A ACTIVE VIEW WITH QUEUE */
+                <div className="space-y-4">
+                  {/* Active Speaker Banner */}
+                  {presentationState?.activeSpeakerId ? (
+                    (() => {
+                      const activeItem = qnaQueue.find(q => q.viewerId === presentationState.activeSpeakerId && q.status === "SPEAKING");
+                      return (
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between animate-pulse">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Mic className="w-4 h-4 text-emerald-500" />
+                            <span className="text-emerald-500 font-bold">EN DIRECTO:</span>
+                            <span className="font-semibold text-foreground">{activeItem?.viewerName || "Espectador activo"}</span>
+                          </div>
+                          
+                          {activeItem && (
+                            <button
+                              onClick={() => updateQnaStatusMutation({ requestId: activeItem._id, status: "FINISHED", adminToken: adminToken || "" })}
+                              className="bg-rose-500 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold font-display hover:bg-rose-600 transition-colors"
+                            >
+                              Finalizar
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : null}
+
+                  {/* Hands Raised Queue */}
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cola de espera</p>
+                    
+                    {qnaQueue.filter(q => q.status === "PENDING").map((item) => (
+                      <div key={item._id} className="flex items-center justify-between bg-card border border-border/80 p-3 rounded-2xl hover:bg-secondary/40 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                          <span className="text-xs font-semibold">{item.viewerName}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => updateQnaStatusMutation({ requestId: item._id, status: "SPEAKING", adminToken: adminToken || "" })}
+                            className="bg-emerald-500 text-white rounded-lg p-1.5 hover:bg-emerald-600 transition-colors text-[10px] font-bold font-display flex items-center gap-1"
+                            title="Dar palabra y emitir"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            Emitir
+                          </button>
+                          <button
+                            onClick={() => updateQnaStatusMutation({ requestId: item._id, status: "FINISHED", adminToken: adminToken || "" })}
+                            className="bg-secondary hover:bg-secondary-foreground/10 text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-colors"
+                            title="Descartar"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {qnaQueue.filter(q => q.status === "PENDING").length === 0 && (
+                      <div className="text-center py-6 text-muted-foreground/60 text-xs font-light bg-secondary/10 rounded-2xl border border-dashed border-border/60">
+                        Esperando que alguien levante la mano desde el móvil...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </section>
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Create Step Form */}

@@ -11,6 +11,9 @@ export default defineSchema({
     activePresentationId: v.optional(v.union(v.id("presentations"), v.null())),
     currentStepId: v.union(v.id("steps"), v.null()),
     activeSlideId: v.optional(v.union(v.id("slides"), v.null())),
+    webcamActive: v.optional(v.boolean()), // true if admin is broadcasting webcam
+    qnaEnabled: v.optional(v.boolean()), // true if live audience Q&A is active
+    activeSpeakerId: v.optional(v.union(v.string(), v.null())), // viewerId of the active speaker
   }),
   steps: defineTable({
     presentationId: v.optional(v.id("presentations")),
@@ -35,6 +38,13 @@ export default defineSchema({
     storageId: v.id("_storage"),
     url: v.string(),
     altText: v.string(),
+  }),
+  qnaQueue: defineTable({
+    presentationId: v.id("presentations"),
+    viewerId: v.string(), // unique socket/browser ID for the viewer
+    viewerName: v.string(), // display name
+    status: v.union(v.literal("PENDING"), v.literal("SPEAKING"), v.literal("FINISHED")),
+    createdAt: v.number(),
   }),
 });
 

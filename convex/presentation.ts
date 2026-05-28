@@ -150,3 +150,148 @@ export const setActivePresentation = mutation({
   },
 });
 
+// Webcam status mutation
+export const setWebcamActive = mutation({
+  args: { 
+    active: v.boolean(),
+    adminToken: v.string() 
+  },
+  handler: async (ctx, args) => {
+    const state = await ctx.db.query("presentationState").first();
+    if (state) {
+      await ctx.db.patch(state._id, { webcamActive: args.active });
+    }
+  },
+});
+
+// Q&A toggle mutation
+export const setQnaEnabled = mutation({
+  args: { 
+    enabled: v.boolean(),
+    adminToken: v.string() 
+  },
+  handler: async (ctx, args) => {
+    const state = await ctx.db.query("presentationState").first();
+    if (state) {
+      await ctx.db.patch(state._id, { 
+        qnaEnabled: args.enabled,
+        // Reset speaker if Q&A is disabled
+        activeSpeakerId: args.enabled ? state.activeSpeakerId : null 
+      });
+    }
+  },
+});
+
+// Active Speaker mutation
+export const setActiveSpeaker = mutation({
+  args: { 
+    viewerId: v.union(v.string(), v.null()),
+    adminToken: v.string() 
+  },
+  handler: async (ctx, args) => {
+    const state = await ctx.db.query("presentationState").first();
+    if (state) {
+      await ctx.db.patch(state._id, { activeSpeakerId: args.viewerId });
+    }
+  },
+});
+
+// Request to speak (Viewer raises hand)
+export const requestToSpeak = mutation({
+  args: {
+    presentationId: v.id("presentations"),
+    viewerId: v.string(),
+    viewerName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Check if Q&A is enabled
+    const state = await ctx.db.query("presentationState").first();
+    if (!state?.qnaEnabled) {
+      throw new Error("El turno de preguntas no está activado.");
+    }
+
+    // Check if already in queue
+    const existing = await ctx.db
+      .query("qnaQueue")
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("presentationId"), args.presentationId),
+          q.eq(q.field("viewerId"), args.viewerId),
+          q.neq(q.field("status"), "FINISHED")
+        )
+      )
+      .first();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    // Insert new request
+    return await ctx.db.insert("qnaQueue", {
+      presentationId: args.presentationId,
+      viewerId: args.viewerId,
+      viewerName: args.viewerName,
+      status: "PENDING",
+      createdAt: Date.now(),
+    });
+  },
+});
+
+// Get Q&A queue (Real-time query for both Admin and Viewers)
+export const getQnaQueue = query({
+  args: { presentationId: v.id("presentations") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("qnaQueue")
+      .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
+      .collect();
+  },
+});
+
+// Update Q&A Request Status (Admin approves, rejects, or finishes a speaker)
+export const updateQnaStatus = mutation({
+  args: {
+    requestId: v.id("qnaQueue"),
+    status: v.union(v.literal("PENDING"), v.literal("SPEAKING"), v.literal("FINISHED")),
+    adminToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.requestId);
+    if (!request) {
+      throw new Error("Petición de turno no encontrada.");
+    }
+
+    // Update request status
+    await ctx.db.patch(args.requestId, { status: args.status });
+
+    // Update active speaker in presentation state
+    const state = await ctx.db.query("presentationState").first();
+    if (state) {
+      if (args.status === "SPEAKING") {
+        // Set as active speaker
+        await ctx.db.patch(state._id, { activeSpeakerId: request.viewerId });
+        
+        // Mark all other "SPEAKING" as "FINISHED" to maintain a single speaker
+        const otherSpeaking = await ctx.db
+          .query("qnaQueue")
+          .filter((q) => 
+            q.and(
+              q.eq(q.field("presentationId"), request.presentationId),
+              q.eq(q.field("status"), "SPEAKING"),
+              q.neq(q._id, args.requestId)
+            )
+          )
+          .collect();
+
+        for (const item of otherSpeaking) {
+          await ctx.db.patch(item._id, { status: "FINISHED" });
+        }
+      } else if (args.status === "FINISHED" && state.activeSpeakerId === request.viewerId) {
+        // Clear active speaker
+        await ctx.db.patch(state._id, { activeSpeakerId: null });
+      }
+    }
+  },
+});
+
+
