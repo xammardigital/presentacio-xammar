@@ -689,7 +689,7 @@ function AdminPageContent() {
 
                           <button
                             onClick={() => {
-                              router.push(`/admin/slides?presentationId=${p._id}`);
+                              window.location.href = `/admin/slides?presentationId=${p._id}`;
                             }}
                             className="flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-all font-display cursor-pointer"
                           >
@@ -785,7 +785,8 @@ function AdminPageContent() {
             
             <button
                onClick={() => {
-                 router.push(`/admin/slides?presentationId=${selectedPresentationId}`);
+                 const pid = selectedPresentationId || searchParams?.get("presentationId");
+                 if (pid) window.location.href = `/admin/slides?presentationId=${pid}`;
                }}
                className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/15 transition-all font-display cursor-pointer"
              >
