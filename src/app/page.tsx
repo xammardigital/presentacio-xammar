@@ -211,7 +211,7 @@ export default function PublicPage() {
         mobileStream.getTracks().forEach(track => track.stop());
       }
       if (mobileCallObject) {
-        mobileCallObject.leave().then(() => mobileCallObject.destroy()).catch(e => console.log(e));
+        mobileCallObject.leave().then(() => mobileCallObject.destroy()).catch((e: any) => console.log(e));
       }
     };
   }, [mobileStream, mobileCallObject]);

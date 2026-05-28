@@ -189,7 +189,7 @@ export default function WebcamOverlay({
       const stream = new MediaStream([presenter.videoTrack]);
       if (videoElementRef.current.srcObject !== stream) {
         videoElementRef.current.srcObject = stream;
-        videoElementRef.current.play().catch(e => console.log("Video auto-play blocked:", e));
+        videoElementRef.current.play().catch((e: any) => console.log("Video auto-play blocked:", e));
       }
     }
 
@@ -203,7 +203,7 @@ export default function WebcamOverlay({
         const stream = new MediaStream([speaker.videoTrack]);
         if (speakerVideoElementRef.current.srcObject !== stream) {
           speakerVideoElementRef.current.srcObject = stream;
-          speakerVideoElementRef.current.play().catch(e => console.log("Speaker video auto-play blocked:", e));
+          speakerVideoElementRef.current.play().catch((e: any) => console.log("Speaker video auto-play blocked:", e));
         }
       }
     }

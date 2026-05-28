@@ -369,7 +369,7 @@ function AdminPageContent() {
         localStream.getTracks().forEach(t => t.stop());
       }
       if (adminCallObject) {
-        adminCallObject.leave().then(() => adminCallObject.destroy()).catch(e => console.log(e));
+        adminCallObject.leave().then(() => adminCallObject.destroy()).catch((e: any) => console.log(e));
       }
     };
   }, [localStream, adminCallObject]);
