@@ -136,7 +136,22 @@ export default function PublicPage() {
 
       setMobileStream(stream);
 
-      const roomUrl = "https://xammardigital.daily.co/4XvgrpD8t4sYDCqH4861";
+      // Fetch the interactive participant video token
+      const res = await fetch("/api/video/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          presentationId: presentationState.activePresentationId,
+          role: "interactive",
+          viewerName: viewerName || "Espectador",
+          viewerId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "No se ha podido conectar al servidor de vídeo");
+      }
 
       // Import Daily dynamically
       const DailyIframe = (await import("@daily-co/daily-js")).default;
@@ -153,7 +168,8 @@ export default function PublicPage() {
       });
 
       await call.join({
-        url: roomUrl,
+        url: data.roomUrl,
+        token: data.token,
       });
 
       // Enable local devices in Daily room

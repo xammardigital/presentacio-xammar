@@ -288,7 +288,29 @@ function AdminPageContent() {
         setVideoError(null);
         setMissingAdminApiKey(false);
 
-        const roomUrl = "https://xammardigital.daily.co/4XvgrpD8t4sYDCqH4861";
+        // Fetch token from our Next API Route
+        const res = await fetch("/api/video/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            presentationId: selectedPresentationId,
+            role: "admin",
+          }),
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok || !data.success) {
+          if (data.missingApiKey) {
+            setMissingAdminApiKey(true);
+            // Allow simulated camera if key is missing so the user can test the UI!
+            if (confirm("⚠️ Clave API de Daily.co no configurada. ¿Quieres simular la transmisión para probar la interfaz (ventanita flotante) en la pantalla de presentación?")) {
+              await setWebcamActiveMutation({ active: true, adminToken });
+            }
+            return;
+          }
+          throw new Error(data.error || "No se ha podido obtener el token de vídeo");
+        }
 
         // Dynamically import @daily-co/daily-js to keep server-side rendering happy
         const DailyIframe = (await import("@daily-co/daily-js")).default;
@@ -320,7 +342,8 @@ function AdminPageContent() {
         });
 
         await call.join({
-          url: roomUrl,
+          url: data.roomUrl,
+          token: data.token,
         });
 
         // Set video camera on in the conference
