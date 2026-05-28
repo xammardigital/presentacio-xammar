@@ -720,6 +720,49 @@ export default function PresenterPage() {
           object-fit: contain;
           background: rgba(255, 255, 255, 0.02);
         }
+        .presenter-markdown table {
+          width: 90%;
+          margin: 2em auto;
+          border-collapse: separate;
+          border-spacing: 0;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 1.25rem;
+          overflow: hidden;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+          backdrop-filter: blur(8px);
+        }
+        .presenter-markdown th {
+          background: rgba(255, 255, 255, 0.06);
+          color: #FF6B00;
+          font-family: var(--font-funnel-display);
+          font-weight: 700;
+          font-size: 1.1em;
+          padding: 1.25rem 1.5rem;
+          text-align: center;
+          border-bottom: 2px solid rgba(255, 107, 0, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .presenter-markdown td {
+          padding: 1.25rem 1.5rem;
+          color: rgba(255, 255, 255, 0.85);
+          font-family: var(--font-funnel-sans);
+          line-height: 1.5;
+          text-align: center;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .presenter-markdown tr:last-child td {
+          border-bottom: none;
+        }
+        .presenter-markdown tr:nth-child(even) {
+          background: rgba(255, 255, 255, 0.015);
+        }
+        .presenter-markdown tr:hover td {
+          background: rgba(255, 107, 0, 0.03);
+          color: #fff;
+          transition: all 0.2s ease;
+        }
         .scrollbar-thin::-webkit-scrollbar {
           width: 5px;
         }
