@@ -267,8 +267,7 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params) as { id: any };
   const router = useRouter();
   
-  // Passcode security bypassed as requested by the user to allow anyone to enter
-  const [adminToken, setAdminToken] = useState<string | null>("bypass");
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [markdown, setMarkdown] = useState<string>("");
   const [internalTitle, setInternalTitle] = useState<string>("Nova Diapositiva");
@@ -379,7 +378,13 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    const savedToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    if (savedToken) {
+      setAdminToken(savedToken);
+    } else {
+      router.push("/vision");
+    }
+  }, [router]);
 
   const slide = useQuery(api.slides.getById, { id });
   const steps = useQuery(api.steps.list, slide?.presentationId ? { presentationId: slide.presentationId } : "skip") || [];
@@ -422,10 +427,10 @@ export default function SlideEditorPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     if (hasChanges) {
       if (confirm("Tens canvis sense desar. Segur que vols sortir sense guardar-los?")) {
-        router.push(`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
+        router.push(`/vision/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
       }
     } else {
-      router.push(`/admin/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
+      router.push(`/vision/slides${slide?.presentationId ? `?presentationId=${slide.presentationId}` : ""}`);
     }
   };
 

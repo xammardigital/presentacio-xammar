@@ -347,7 +347,7 @@ export default function PresenterPage() {
 
   useEffect(() => {
     const handleToken = () => {
-      const token = sessionStorage.getItem("adminToken") || localStorage.getItem("adminToken");
+      const token = sessionStorage.getItem("adminToken");
       setAdminToken(token);
     };
     handleToken();

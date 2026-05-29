@@ -5,14 +5,24 @@ import { api } from "../../../../convex/_generated/api";
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Monitor, LogOut, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+const ADMIN_TOKEN_KEY = "adminToken";
 
 export default function RemoteControlPage() {
-  const [adminToken, setAdminToken] = useState<string | null>("bypass");
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    const savedToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    if (savedToken) {
+      setAdminToken(savedToken);
+    } else {
+      router.push("/vision");
+    }
+  }, [router]);
 
   const presentationState = useQuery(api.presentation.getState);
   const slides = useQuery(api.slides.list, presentationState?.activePresentationId ? { presentationId: presentationState.activePresentationId } : "skip") || [];
@@ -53,7 +63,7 @@ export default function RemoteControlPage() {
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card/50">
         <div className="flex items-center gap-3">
-          <Link href="/admin/slides" className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground">
+          <Link href="/vision/slides" className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="font-bold font-display text-lg">Comandament</h1>

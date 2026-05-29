@@ -147,8 +147,7 @@ function SortableStep({
 
 // --- Admin Dashboard Content ---
 function AdminPageContent() {
-  // Passcode security bypassed as requested by the user to allow anyone to enter
-  const [adminToken, setAdminToken] = useState<string | null>("bypass");
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,11 +167,15 @@ function AdminPageContent() {
 
   useEffect(() => {
     setIsMounted(true);
+    const savedToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    if (savedToken) {
+      setAdminToken(savedToken);
+    }
   }, []);
 
   useEffect(() => {
     // Only read presentationId from URL on the very first render.
-    // Subsequent searchParams changes (e.g. from router.push to /admin/slides)
+    // Subsequent searchParams changes (e.g. from router.push to /vision/slides)
     // must NOT trigger this, or navigation gets cancelled.
     if (!hasReadInitialParams.current) {
       hasReadInitialParams.current = true;
@@ -438,7 +441,6 @@ function AdminPageContent() {
       if (data.valid) {
         setAdminToken(tokenInput);
         sessionStorage.setItem(ADMIN_TOKEN_KEY, tokenInput);
-        localStorage.setItem(ADMIN_TOKEN_KEY, tokenInput);
       } else {
         setError(data.error || "Token incorrecte. Torna-ho a intentar.");
       }
@@ -451,7 +453,6 @@ function AdminPageContent() {
 
   const handleLogout = () => {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
     setAdminToken(null);
     setTokenInput("");
     setError(null);
@@ -649,6 +650,99 @@ function AdminPageContent() {
     );
   }
 
+  if (!adminToken) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 text-foreground relative overflow-hidden">
+        {/* Background Decorative Gradients/Orbs */}
+        <div className="absolute top-1/4 left-1/4 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md space-y-8 rounded-3xl border border-border/60 bg-card/45 p-8 sm:p-10 text-center glass shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-orange-500 to-indigo-600" />
+          
+          <div className="space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
+              <Lock className="h-8 w-8" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-extrabold tracking-tight font-display text-foreground">
+                Xammar Digital
+              </h1>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">
+                Accés Administrador
+              </p>
+              <p className="text-xs text-muted-foreground font-light max-w-xs mx-auto">
+                Introdueix la clau de pas de seguretat per gestionar les presentacions, slides i interaccions.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4 pt-2">
+            <div className="space-y-2 text-left">
+              <label htmlFor="passcode" className="text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                Clau de Seguretat
+              </label>
+              <input
+                id="passcode"
+                type="password"
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full rounded-2xl border border-border bg-background/50 p-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all font-mono"
+                required
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive pl-4 text-left font-medium"
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </motion.div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isValidating || !tokenInput.trim()}
+              className="w-full rounded-2xl bg-primary py-4 font-bold text-white transition-all hover:opacity-95 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-display flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isValidating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Validant...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Entrar al Tauler</span>
+                </>
+              )}
+            </button>
+          </form>
+          
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Tornar a l'inici
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   // --- RENDER DASHBOARD MODE ---
   if (!selectedPresentationId) {
     const activeGlobalPres = presentations.find(p => p._id === presentationState?.activePresentationId);
@@ -680,6 +774,14 @@ function AdminPageContent() {
               >
                 <Monitor className="h-4 w-4" />
                 Obrir Projector
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 rounded-full border border-destructive/20 bg-destructive/10 px-4.5 py-2 text-xs font-bold text-destructive hover:bg-destructive/15 transition-all font-display cursor-pointer"
+                title="Tancar la sessió d'administrador"
+              >
+                <LogOut className="h-4 w-4" />
+                Sortir
               </button>
             </div>
           </header>
@@ -828,7 +930,7 @@ function AdminPageContent() {
                             onClick={() => {
                               setSelectedPresentationId(p._id);
                               // Sync parameters to history to remember selection
-                              router.push(`/admin?presentationId=${p._id}`);
+                              router.push(`/vision?presentationId=${p._id}`);
                             }}
                             className="flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-all font-display"
                           >
@@ -837,7 +939,7 @@ function AdminPageContent() {
 
                           <button
                             onClick={() => {
-                              window.location.href = `/admin/slides?presentationId=${p._id}`;
+                              window.location.href = `/vision/slides?presentationId=${p._id}`;
                             }}
                             className="flex items-center gap-2 rounded-xl border border-border bg-card p-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-all font-display cursor-pointer"
                           >
@@ -894,7 +996,7 @@ function AdminPageContent() {
             <button
               onClick={() => {
                 setSelectedPresentationId(null);
-                router.push("/admin"); // Clear the param
+                router.push("/vision"); // Clear the param
               }}
               className="rounded-full bg-secondary hover:bg-secondary/80 p-2.5 text-muted-foreground hover:text-foreground transition-colors mt-1 sm:mt-0"
               title="Tornar al tauler"
@@ -934,7 +1036,7 @@ function AdminPageContent() {
             <button
                onClick={() => {
                  const pid = selectedPresentationId || searchParams?.get("presentationId");
-                 if (pid) window.location.href = `/admin/slides?presentationId=${pid}`;
+                 if (pid) window.location.href = `/vision/slides?presentationId=${pid}`;
                }}
                className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-bold text-primary hover:bg-primary/15 transition-all font-display cursor-pointer"
              >
@@ -943,13 +1045,22 @@ function AdminPageContent() {
              </button>
 
             <Link
-              href="/admin/remote"
+              href="/vision/remote"
               className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary/50 px-4 py-2.5 text-xs font-bold text-foreground transition-all hover:bg-secondary font-display"
               title="Comandament mòbil per gestionar diapositives"
             >
               <Smartphone className="h-3.5 w-3.5" />
               Comandament Mòbil
             </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-2.5 text-xs font-bold text-destructive hover:bg-destructive/15 transition-all font-display cursor-pointer"
+              title="Tancar la sessió d'administrador"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sortir
+            </button>
           </div>
         </header>
 

@@ -20,7 +20,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import {
   DndContext,
@@ -68,7 +68,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentation
           <GripVertical className="h-5 w-5" />
         </div>
         <Link
-          href={`/admin/slides/${slide._id}?presentationId=${presentationId || ""}`}
+          href={`/vision/slides/${slide._id}?presentationId=${presentationId || ""}`}
           className="flex flex-1 items-center gap-4 hover:opacity-80 transition-all w-full sm:w-auto cursor-pointer"
         >
           <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-secondary/50 border border-border overflow-hidden text-[6px] p-2 leading-tight text-muted-foreground select-none">
@@ -98,7 +98,7 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentation
           {isActive ? "ACTIVA" : "ACTIVAR"}
         </button>
         <Link
-          href={`/admin/slides/${slide._id}?presentationId=${presentationId || ""}`}
+          href={`/vision/slides/${slide._id}?presentationId=${presentationId || ""}`}
           className="rounded-lg bg-secondary p-2 text-muted-foreground hover:text-foreground transition-all"
         >
           <Edit3 className="h-5 w-5" />
@@ -115,13 +115,19 @@ function SortableSlideItem({ slide, isActive, onActivate, onRemove, presentation
 }
 
 function SlidesAdminPageContent() {
-  // Passcode security bypassed as requested by the user to allow anyone to enter
-  const [adminToken, setAdminToken] = useState<string | null>("bypass");
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    const savedToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    if (savedToken) {
+      setAdminToken(savedToken);
+    } else {
+      router.push("/vision");
+    }
+  }, [router]);
 
   const searchParams = useSearchParams();
   const presentationState = useQuery(api.presentation.getState);
@@ -335,7 +341,7 @@ function SlidesAdminPageContent() {
       <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
         <header className="flex flex-col gap-6 md:flex-row md:items-center justify-between">
           <div className="flex items-start sm:items-center gap-4">
-            <Link href={`/admin${presentationId ? `?presentationId=${presentationId}` : ""}`} className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground mt-1 sm:mt-0">
+            <Link href={`/vision${presentationId ? `?presentationId=${presentationId}` : ""}`} className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground mt-1 sm:mt-0">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
@@ -381,7 +387,7 @@ function SlidesAdminPageContent() {
                 Reiniciar
             </button>
             <Link 
-                href="/admin/remote"
+                href="/vision/remote"
                 className="flex items-center gap-2 rounded-xl border border-secondary bg-secondary/50 px-4 py-2 text-sm font-bold text-foreground hover:bg-secondary transition-all font-display"
                 title="Mode comandament mòbil"
             >
