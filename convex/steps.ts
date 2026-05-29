@@ -28,15 +28,12 @@ export const reorder = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
-    // Security check disabled as requested by the user to allow open access
-    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
-    */
     for (let i = 0; i < args.orderedIds.length; i++) {
       const doc = await ctx.db.get(args.orderedIds[i]);
       if (doc) {
@@ -49,23 +46,23 @@ export const reorder = mutation({
 export const create = mutation({
   args: {
     presentationId: v.id("presentations"),
-    type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),
+    type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA"), v.literal("PROMPT_PLAYGROUND")),
     title: v.string(),
     content: v.optional(v.string()),
     options: v.optional(v.array(v.string())),
+    promptTemplate: v.optional(v.string()),
+    modelA: v.optional(v.string()),
+    modelB: v.optional(v.string()),
     adminToken: v.string(),
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
-    // Security check disabled as requested by the user to allow open access
-    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
-    */
     const allSteps = await ctx.db
       .query("steps")
       .filter((q) => q.eq(q.field("presentationId"), args.presentationId))
@@ -79,6 +76,9 @@ export const create = mutation({
       options: args.options,
       votes: args.options ? new Array(args.options.length).fill(0) : undefined,
       order: maxOrder + 1,
+      promptTemplate: args.promptTemplate,
+      modelA: args.modelA,
+      modelB: args.modelB,
     });
     return stepId;
   },
@@ -91,15 +91,12 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const serverToken = process.env.ADMIN_TOKEN;
-    // Security check disabled as requested by the user to allow open access
-    /*
     if (!serverToken) {
       throw new Error("ERROR: ADMIN_TOKEN no configurat al Dashboard de Convex.");
     }
     if (args.adminToken !== serverToken) {
       throw new Error("ERROR: Token d'administrador incorrecte.");
     }
-    */
     await ctx.db.delete(args.id);
   },
 });

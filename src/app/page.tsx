@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, ChevronRight, BarChart3, Star, Zap, Video, Mic, MicOff, Loader2, X, Smile } from "lucide-react";
+import { CheckCircle2, ChevronRight, BarChart3, Star, Zap, Video, Mic, MicOff, Loader2, X, Smile, Terminal, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RichText } from "@/components/RichText";
 
@@ -35,6 +35,13 @@ export default function PublicPage() {
   const [mobileVideoError, setMobileVideoError] = useState<string | null>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
 
+  // Prompt Playground Local States
+  const [promptText, setPromptText] = useState("");
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResultA, setExecutionResultA] = useState<string | null>(null);
+  const [executionResultB, setExecutionResultB] = useState<string | null>(null);
+  const [executionError, setExecutionError] = useState<string | null>(null);
+
   // Generate unique persistent viewerId
   useEffect(() => {
     let vid = localStorage.getItem("xammar-viewer-id");
@@ -57,11 +64,20 @@ export default function PublicPage() {
     }
   }, [mobileStream]);
 
-  // Reset vote state when step changes
+  // Reset states when step changes
   useEffect(() => {
     setHasVoted(false);
     setSelectedOption(null);
-  }, [presentationState?.currentStepId]);
+    setExecutionResultA(null);
+    setExecutionResultB(null);
+    setExecutionError(null);
+    setIsExecuting(false);
+    if (currentStep?.type === "PROMPT_PLAYGROUND") {
+      setPromptText(currentStep.promptTemplate || "");
+    } else {
+      setPromptText("");
+    }
+  }, [presentationState?.currentStepId, currentStep?._id, currentStep?.promptTemplate, currentStep?.type]);
 
   const handleVote = async (index: number) => {
     if (hasVoted || !presentationState?.currentStepId) return;
@@ -69,6 +85,37 @@ export default function PublicPage() {
     setHasVoted(true);
     setSelectedOption(index);
     await vote({ stepId: presentationState.currentStepId, optionIndex: index });
+  };
+
+  const handleExecutePrompt = async () => {
+    if (isExecuting || !promptText.trim()) return;
+    setIsExecuting(true);
+    setExecutionError(null);
+    setExecutionResultA(null);
+    setExecutionResultB(null);
+    
+    try {
+      const res = await fetch("/api/prompt/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptText,
+          modelA: currentStep?.modelA,
+          modelB: currentStep?.modelB,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Error al executar el prompt.");
+      }
+      setExecutionResultA(data.resultA || null);
+      setExecutionResultB(data.resultB || null);
+    } catch (err: any) {
+      console.error(err);
+      setExecutionError(err.message || "Hi ha hagut un problema en comunicar amb OpenRouter.");
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   // Find my current active request in the queue
@@ -258,11 +305,13 @@ export default function PublicPage() {
             <div className={`rounded-full p-4 ${
               currentStep.type === 'BIENVENIDA' ? 'bg-amber-500/10 text-amber-500' :
               currentStep.type === 'TEXTO' ? 'bg-primary/10 text-primary' :
+              currentStep.type === 'PROMPT_PLAYGROUND' ? 'bg-purple-500/10 text-purple-500' :
               'bg-emerald-500/10 text-emerald-500'
             }`}>
               {currentStep.type === 'BIENVENIDA' && <SmileIcon className="h-8 w-8" />}
               {currentStep.type === 'TEXTO' && <Zap className="h-8 w-8" />}
               {currentStep.type === 'ENCUESTA' && <BarChart3 className="h-8 w-8" />}
+              {currentStep.type === 'PROMPT_PLAYGROUND' && <Terminal className="h-8 w-8" />}
             </div>
           </div>
 
@@ -324,6 +373,130 @@ export default function PublicPage() {
                 Interactua en temps real
               </div>
             </motion.div>
+          )}
+
+          {currentStep.type === "PROMPT_PLAYGROUND" && (
+            <div className="w-full space-y-6">
+              {/* Glassmorphic code editor container */}
+              <div className="relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-4 shadow-lg overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <Terminal className="h-4 w-4 text-primary" />
+                    <span>Consola del Prompt</span>
+                  </div>
+                  <span className="text-[10px] bg-secondary/80 text-muted-foreground px-2 py-0.5 rounded-md font-mono">
+                    Editable
+                  </span>
+                </div>
+                
+                <textarea
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                  placeholder="Escriu o edita el teu prompt aquí..."
+                  disabled={isExecuting}
+                  className="w-full h-32 bg-background/50 border border-border/50 rounded-xl p-3.5 text-sm font-mono text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all resize-none shadow-inner"
+                />
+              </div>
+
+              {/* Glowing Execute Button */}
+              <button
+                onClick={handleExecutePrompt}
+                disabled={isExecuting || !promptText.trim()}
+                className="relative group w-full overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-purple-600 hover:opacity-95 font-bold font-display text-white py-4 text-base flex items-center justify-center gap-2.5 shadow-md shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none disabled:scale-100"
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {isExecuting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Executant amb IA...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5 text-amber-300 animate-pulse" />
+                    <span>Executar Prompt amb IA</span>
+                  </>
+                )}
+              </button>
+
+              {/* Error Message */}
+              {executionError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-500 font-semibold text-center"
+                >
+                  ⚠️ {executionError}
+                </motion.div>
+              )}
+
+              {/* Shimmering Skeleton Loader */}
+              {isExecuting && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 space-y-3 animate-pulse shadow-md">
+                    <div className="h-4 bg-muted/80 rounded w-1/3" />
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted/50 rounded w-full" />
+                      <div className="h-3 bg-muted/50 rounded w-5/6" />
+                      <div className="h-3 bg-muted/50 rounded w-4/5" />
+                    </div>
+                  </div>
+                  {currentStep.modelB && (
+                    <div className="rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 space-y-3 animate-pulse shadow-md">
+                      <div className="h-4 bg-muted/80 rounded w-1/3" />
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted/50 rounded w-full" />
+                        <div className="h-3 bg-muted/50 rounded w-5/6" />
+                        <div className="h-3 bg-muted/50 rounded w-3/4" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Execution Results */}
+              <AnimatePresence mode="popLayout">
+                {(executionResultA || executionResultB) && !isExecuting && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid gap-4 w-full"
+                  >
+                    {/* Model A Results */}
+                    {executionResultA && (
+                      <div className="relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 shadow-lg overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+                        <div className="flex items-center gap-2 border-b border-border/40 pb-3 mb-3">
+                          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
+                            Model A: <span className="text-foreground font-bold">{currentStep.modelA?.split('/')?.pop() || currentStep.modelA}</span>
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium leading-relaxed text-foreground whitespace-pre-wrap font-sans">
+                          {executionResultA}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Model B Results */}
+                    {executionResultB && (
+                      <div className="relative rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 shadow-lg overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+                        <div className="flex items-center gap-2 border-b border-border/40 pb-3 mb-3">
+                          <div className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                          <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
+                            Model B: <span className="text-foreground font-bold">{currentStep.modelB?.split('/')?.pop() || currentStep.modelB}</span>
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium leading-relaxed text-foreground whitespace-pre-wrap font-sans">
+                          {executionResultB}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

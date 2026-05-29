@@ -17,12 +17,15 @@ export default defineSchema({
   }),
   steps: defineTable({
     presentationId: v.optional(v.id("presentations")),
-    type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA")),
+    type: v.union(v.literal("BIENVENIDA"), v.literal("TEXTO"), v.literal("ENCUESTA"), v.literal("PROMPT_PLAYGROUND")),
     title: v.string(),
-    content: v.optional(v.string()), // Used for TEXTO
+    content: v.optional(v.string()), // Used for TEXTO or details of PROMPT_PLAYGROUND
     options: v.optional(v.array(v.string())), // Used for ENCUESTA
     votes: v.optional(v.array(v.number())), // Used for ENCUESTA, keeps track of vote counts
     order: v.number(),
+    promptTemplate: v.optional(v.string()), // Used for PROMPT_PLAYGROUND
+    modelA: v.optional(v.string()), // Used for PROMPT_PLAYGROUND
+    modelB: v.optional(v.string()), // Used for PROMPT_PLAYGROUND
   }),
   slides: defineTable({
     presentationId: v.optional(v.id("presentations")),

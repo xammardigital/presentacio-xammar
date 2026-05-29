@@ -10,6 +10,7 @@ import {
   BarChart3, 
   Type, 
   Smile, 
+  Terminal,
   Lock, 
   LogOut, 
   GripVertical, 
@@ -107,17 +108,26 @@ function SortableStep({
               ? "bg-amber-500/20 text-amber-500"
               : step.type === "TEXTO"
               ? "bg-sky-500/20 text-sky-500"
-              : "bg-emerald-500/20 text-emerald-500"
+              : step.type === "ENCUESTA"
+              ? "bg-emerald-500/20 text-emerald-500"
+              : "bg-purple-500/20 text-purple-500"
           }`}
         >
           {step.type === "BIENVENIDA" && <Smile className="h-5 w-5" />}
           {step.type === "TEXTO" && <Type className="h-5 w-5" />}
           {step.type === "ENCUESTA" && <BarChart3 className="h-5 w-5" />}
+          {step.type === "PROMPT_PLAYGROUND" && <Terminal className="h-5 w-5" />}
         </div>
         <div>
           <h3 className="font-semibold text-foreground leading-snug">{step.title}</h3>
           <p className="text-[10px] font-bold tracking-wider text-muted-foreground mt-0.5 uppercase">
-            {step.type === 'BIENVENIDA' ? 'Benvinguda' : step.type === 'TEXTO' ? 'Missatge de Text' : 'Enquesta Interactiva'}
+            {step.type === 'BIENVENIDA' 
+              ? 'Benvinguda' 
+              : step.type === 'TEXTO' 
+              ? 'Missatge de Text' 
+              : step.type === 'ENCUESTA'
+              ? 'Enquesta Interactiva'
+              : 'Prompt Playground'}
           </p>
         </div>
       </div>
@@ -386,10 +396,13 @@ function AdminPageContent() {
   }, [localStream]);
 
   // Form states for creating a new step
-  const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA">("BIENVENIDA");
+  const [type, setType] = useState<"BIENVENIDA" | "TEXTO" | "ENCUESTA" | "PROMPT_PLAYGROUND">("BIENVENIDA");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
+  const [promptTemplate, setPromptTemplate] = useState("");
+  const [modelA, setModelA] = useState("google/gemini-2.5-flash");
+  const [modelB, setModelB] = useState("");
 
   const activeStep = localSteps.find((s: any) => s._id === presentationState?.currentStepId);
 
@@ -527,13 +540,19 @@ function AdminPageContent() {
         presentationId: selectedPresentationId as any,
         type,
         title: title.trim(),
-        content: type === "TEXTO" ? content.trim() : undefined,
+        content: (type === "TEXTO" || type === "PROMPT_PLAYGROUND") ? content.trim() : undefined,
         options: type === "ENCUESTA" ? options.filter((o) => o.trim() !== "") : undefined,
+        promptTemplate: type === "PROMPT_PLAYGROUND" ? promptTemplate.trim() : undefined,
+        modelA: type === "PROMPT_PLAYGROUND" ? modelA : undefined,
+        modelB: type === "PROMPT_PLAYGROUND" && modelB ? modelB : undefined,
         adminToken,
       });
       setTitle("");
       setContent("");
       setOptions(["", ""]);
+      setPromptTemplate("");
+      setModelA("google/gemini-2.5-flash");
+      setModelB("");
     } catch (err: any) {
       alert("Error en crear el pas: " + (err.data || err.message || "Error desconegut"));
     }
@@ -1302,8 +1321,8 @@ function AdminPageContent() {
             </h2>
             
             <form onSubmit={handleCreateStep} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {(["BIENVENIDA", "TEXTO", "ENCUESTA"] as const).map((t) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(["BIENVENIDA", "TEXTO", "ENCUESTA", "PROMPT_PLAYGROUND"] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -1315,7 +1334,8 @@ function AdminPageContent() {
                     {t === "BIENVENIDA" && <Smile className="h-5 w-5" />}
                     {t === "TEXTO" && <Type className="h-5 w-5" />}
                     {t === "ENCUESTA" && <BarChart3 className="h-5 w-5" />}
-                    {t === 'BIENVENIDA' ? 'Benvinguda' : t === 'TEXTO' ? 'Text Llire' : 'Enquesta'}
+                    {t === "PROMPT_PLAYGROUND" && <Terminal className="h-5 w-5" />}
+                    {t === 'BIENVENIDA' ? 'Benvinguda' : t === 'TEXTO' ? 'Text Lliure' : t === 'ENCUESTA' ? 'Enquesta' : 'Playground'}
                   </button>
                 ))}
               </div>
@@ -1373,6 +1393,73 @@ function AdminPageContent() {
                       + Afegir una altra opció
                     </button>
                   )}
+                </div>
+              )}
+
+              {type === "PROMPT_PLAYGROUND" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Instruccions / Descripció</label>
+                    <input
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="Ex: Prova aquest prompt personalitzant les paraules!"
+                      className="w-full rounded-2xl border border-border bg-background p-3.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Plantilla del Prompt (Prompt Template)</label>
+                    <textarea
+                      value={promptTemplate}
+                      onChange={(e) => setPromptTemplate(e.target.value)}
+                      placeholder={`Escriu el prompt base...\n\nEx: Ets un expert. Dona'm una llista d'idees sobre la temàtica: [tema]`}
+                      className="h-32 w-full rounded-2xl border border-border bg-background p-3.5 text-foreground outline-none focus:ring-2 focus:ring-primary/40 transition-all font-mono text-xs leading-relaxed"
+                      required
+                    />
+                    <p className="text-[10px] text-muted-foreground font-light">💡 Consell: Pots indicar a l'audiència que afegeixi temes, paraules o canvis al mòbil.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Model A (Principal)</label>
+                      <select
+                        value={modelA}
+                        onChange={(e) => setModelA(e.target.value)}
+                        className="w-full rounded-2xl border border-border bg-background p-3.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                      >
+                        <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="deepseek/deepseek-chat">DeepSeek V3 (Chat)</option>
+                        <option value="deepseek/deepseek-r1">DeepSeek R1 (Reasoner)</option>
+                        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                        <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratuït)</option>
+                        <option value="openai/gpt-4o">GPT-4o</option>
+                        <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Model B (Opcional - Comparativa)</label>
+                      <select
+                        value={modelB}
+                        onChange={(e) => setModelB(e.target.value)}
+                        className="w-full rounded-2xl border border-border bg-background p-3.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                      >
+                        <option value="">Cap (Només Model A)</option>
+                        <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="deepseek/deepseek-chat">DeepSeek V3 (Chat)</option>
+                        <option value="deepseek/deepseek-r1">DeepSeek R1 (Reasoner)</option>
+                        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                        <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Gratuït)</option>
+                        <option value="openai/gpt-4o">GPT-4o</option>
+                        <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
 
